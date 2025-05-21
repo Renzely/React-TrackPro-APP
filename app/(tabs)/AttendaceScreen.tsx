@@ -1,0 +1,552 @@
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  Alert,
+  Modal,
+  Image,
+  TouchableOpacity,
+  ActivityIndicator,
+  Button,
+} from "react-native";
+import * as Location from "expo-location";
+import * as ImagePicker from "expo-image-picker";
+import { Picker } from "@react-native-picker/picker";
+import styles from "./Style";
+import DropDownPicker from "react-native-dropdown-picker";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const AttendanceScreen = () => {
+  const [currentTime, setCurrentTime] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
+  const [open, setOpen] = useState(false);
+  const [selectedOutlet, setSelectedOutlet] = useState("");
+  const [outletOptions, setOutletOptions] = useState([
+    { label: "Select Branch", value: "" },
+  ]);
+  const [email, setEmail] = useState("");
+  const [selfieUri, setSelfieUri] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedSelfieUri, setSelectedSelfieUri] = useState<string | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+  const [attendanceData, setAttendanceData] = useState<{
+    hasTimedIn: boolean;
+    hasTimedOut: boolean;
+    timeInTimestamp: string | null;
+    timeOutTimestamp: string | null;
+    addressTimeIn: string | null;
+    addressTimeOut: string | null;
+    timeInSelfieUri: string | null;
+    timeOutSelfieUri: string | null;
+  }>({
+    hasTimedIn: false,
+    hasTimedOut: false,
+    timeInTimestamp: null,
+    timeOutTimestamp: null,
+    addressTimeIn: null,
+    addressTimeOut: null,
+    timeInSelfieUri: null,
+    timeOutSelfieUri: null,
+  });
+
+  useEffect(() => {
+    const updateDateTime = () => {
+      const now = new Date();
+      const options = {
+        year: "numeric" as const,
+        month: "long" as const,
+        day: "numeric" as const,
+      };
+      const formattedDate = now.toLocaleDateString(undefined, options);
+      const hours = now.getHours() % 12 || 12;
+      const minutes = now.getMinutes().toString().padStart(2, "0");
+      const ampm = now.getHours() >= 12 ? "PM" : "AM";
+      const formattedTime = `${hours}:${minutes} ${ampm}`;
+
+      setCurrentDate(formattedDate);
+      setCurrentTime(formattedTime);
+    };
+
+    updateDateTime();
+    const interval = setInterval(updateDateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const viewSelfie = (uri: string) => {
+    setSelectedSelfieUri(uri);
+    setModalVisible(true);
+  };
+
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  const getAddressFromCoords = async (
+    lat: number,
+    lon: number
+  ): Promise<string | null> => {
+    try {
+      const [address] = await Location.reverseGeocodeAsync({
+        latitude: lat,
+        longitude: lon,
+      });
+      if (address) {
+        return `${address.street || ""}, ${
+          address.city || address.district || ""
+        }, ${address.region || ""}`;
+      }
+    } catch (error) {
+      console.error("Reverse geocoding failed", error);
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission to access location was denied");
+        return;
+      }
+
+      let currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation({
+        latitude: currentLocation.coords.latitude,
+        longitude: currentLocation.coords.longitude,
+      });
+    })();
+  }, []);
+
+  useEffect(() => {
+    const loadOutlets = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch("http://192.168.50.55:3001/user/outlets", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const outlets = await response.json();
+          const options = outlets.map((outlet: string) => ({
+            label: outlet,
+            value: outlet,
+          }));
+
+          setOutletOptions([{ label: "Select Branch", value: "" }, ...options]);
+        } else {
+          console.error("Failed to fetch outlets:", await response.text());
+        }
+      } catch (error) {
+        console.error("Failed to load outlets", error);
+      }
+    };
+
+    loadOutlets();
+  }, []);
+
+  const fetchEmail = async () => {
+    try {
+      const storedEmail = await AsyncStorage.getItem("userEmail");
+      if (storedEmail) {
+        setEmail(storedEmail);
+      } else {
+        Alert.alert("Error", "User email not found. Please log in again.");
+      }
+    } catch (error) {
+      console.error("Failed to fetch email from storage:", error);
+      Alert.alert("Error", "Failed to fetch user email.");
+    }
+  };
+
+  useEffect(() => {
+    fetchEmail();
+  }, []);
+
+  const fetchAttendanceData = async (outlet: string) => {
+    if (!outlet || !email) return;
+
+    setLoading(true);
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const response = await fetch(
+        `http://192.168.50.55:3001/attendance/status?email=${email}&outlet=${outlet}&date=${today}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setAttendanceData({
+          hasTimedIn: data.hasTimedIn || false,
+          hasTimedOut: data.hasTimedOut || false,
+          timeInTimestamp: data.timeInTimestamp || null,
+          timeOutTimestamp: data.timeOutTimestamp || null,
+          addressTimeIn: data.addressTimeIn || null,
+          addressTimeOut: data.addressTimeOut || null,
+          timeInSelfieUri: data.timeInSelfieUri || null,
+          timeOutSelfieUri: data.timeOutSelfieUri || null,
+        });
+      } else {
+        // Reset if no data found
+        setAttendanceData({
+          hasTimedIn: false,
+          hasTimedOut: false,
+          timeInTimestamp: null,
+          timeOutTimestamp: null,
+          addressTimeIn: null,
+          addressTimeOut: null,
+          timeInSelfieUri: null,
+          timeOutSelfieUri: null,
+        });
+      }
+    } catch (error) {
+      console.error("Failed to fetch attendance data", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAttendanceData(selectedOutlet);
+  }, [selectedOutlet, email]);
+
+  const handleTimeIn = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Camera access is required to take a selfie.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+      cameraType: ImagePicker.CameraType.front,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      Alert.alert("Selfie is required to Time In.");
+      return;
+    }
+
+    try {
+      const uri = result.assets[0].uri;
+      setSelfieUri(uri);
+
+      const fileName = `Time_In_(${email}).jpg`;
+      const presignRes = await fetch(
+        "http://192.168.50.55:3001/save-attendance-images",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName }),
+        }
+      );
+
+      if (!presignRes.ok) throw new Error("Failed to get upload URL");
+      const { url } = await presignRes.json();
+
+      const imageBlob = await fetch(uri).then((r) => r.blob());
+      const uploadRes = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: imageBlob,
+      });
+
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+
+      const selfieUrl = url.split("?")[0];
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+      const timeIn = now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      });
+
+      let resolvedAddress: string | null = null;
+      if (location) {
+        resolvedAddress = await getAddressFromCoords(
+          location.latitude,
+          location.longitude
+        );
+      }
+
+      // Save attendance to backend
+      const saveRes = await fetch(
+        "http://192.168.50.55:3001/attendance/time-in",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date,
+            outlet: selectedOutlet,
+            timeIn,
+            selfieUrl,
+            location,
+            timeInLocation: resolvedAddress,
+          }),
+        }
+      );
+
+      if (!saveRes.ok) {
+        const errorText = await saveRes.text(); // Read actual error
+        console.error("Time-in backend response:", errorText);
+        throw new Error("Failed to save time-in data");
+      }
+
+      // Refresh attendance data after successful time-in
+      await fetchAttendanceData(selectedOutlet);
+      Alert.alert("Time In recorded!");
+    } catch (error: unknown) {
+      console.error(error);
+      Alert.alert(
+        "Failed to upload or save time-in.",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  };
+
+  const handleTimeOut = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert("Camera access is required to take a selfie.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+      cameraType: ImagePicker.CameraType.front,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      Alert.alert("Selfie is required to Time Out.");
+      return;
+    }
+
+    try {
+      const uri = result.assets[0].uri;
+      const fileName = `Time_Out_(${email}).jpg`;
+
+      const presignRes = await fetch(
+        "http://192.168.50.55:3001/save-attendance-images",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName }),
+        }
+      );
+
+      if (!presignRes.ok) throw new Error("Failed to get upload URL");
+
+      const { url } = await presignRes.json();
+
+      const imageBlob = await fetch(uri).then((r) => r.blob());
+      const uploadRes = await fetch(url, {
+        method: "PUT",
+        headers: { "Content-Type": "image/jpeg" },
+        body: imageBlob,
+      });
+
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        throw new Error(`Upload failed: ${errorText}`);
+      }
+
+      const timeOutSelfieUrl = url.split("?")[0];
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+      const timeOut = now.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: true,
+      });
+
+      let resolvedAddress: string | null = null;
+      if (location) {
+        resolvedAddress = await getAddressFromCoords(
+          location.latitude,
+          location.longitude
+        );
+      }
+
+      // Save to backend
+      const saveRes = await fetch(
+        "http://192.168.50.55:3001/attendance/time-out",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            date,
+            outlet: selectedOutlet,
+            timeOut,
+            timeOutSelfieUrl,
+            location,
+            timeOutLocation: resolvedAddress,
+          }),
+        }
+      );
+
+      if (!saveRes.ok) throw new Error("Failed to save time-out data");
+
+      // Refresh attendance data after successful time-out
+      await fetchAttendanceData(selectedOutlet);
+      Alert.alert("Time Out recorded!");
+    } catch (error: unknown) {
+      console.error(error);
+      Alert.alert(
+        "Failed to upload or save time-out.",
+        error instanceof Error ? error.message : String(error)
+      );
+    }
+  };
+
+  return (
+    <View style={styles.safeArea}>
+      <View style={styles.appBarAttendance}>
+        <Text style={styles.appBarTitleAttendance}>ATTENDANCE</Text>
+      </View>
+
+      <View style={styles.containerAttendance}>
+        {loading && <ActivityIndicator size="large" color="#0000ff" />}
+
+        <View style={{ alignItems: "center", marginBottom: 20 }}>
+          <Text style={{ fontSize: 24, fontWeight: "600" }}>{currentDate}</Text>
+          <Text style={{ fontSize: 56, fontWeight: "bold", marginTop: 5 }}>
+            {currentTime}
+          </Text>
+        </View>
+
+        <View style={styles.pickerWrapper}>
+          <DropDownPicker
+            open={open}
+            value={selectedOutlet}
+            items={outletOptions}
+            setOpen={setOpen}
+            setValue={setSelectedOutlet}
+            setItems={setOutletOptions}
+            searchable={true}
+            placeholder="Select Branch"
+            disabled={attendanceData.hasTimedIn && !attendanceData.hasTimedOut}
+            style={{ width: 250 }}
+            dropDownContainerStyle={{ width: 250 }}
+          />
+        </View>
+
+        {/* TIME IN */}
+        <Text style={styles.sectionLabel}>TIME IN</Text>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="TIME IN"
+            onPress={handleTimeIn}
+            disabled={attendanceData.hasTimedIn}
+            color={attendanceData.hasTimedIn ? "gray" : "#0aafeb"}
+          />
+        </View>
+
+        {attendanceData.timeInSelfieUri && (
+          <TouchableOpacity
+            onPress={() => viewSelfie(attendanceData.timeInSelfieUri!)}
+          >
+            <View style={styles.iconContainer}>
+              <Ionicons name="eye" size={24} color="blue" />
+              <Text style={styles.viewText}>View Time In Selfie</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {attendanceData.timeInTimestamp && (
+          <Text style={styles.timestamp}>
+            {" "}
+            {attendanceData.timeInTimestamp}
+          </Text>
+        )}
+
+        {attendanceData.addressTimeIn && (
+          <Text style={styles.timestamp}> {attendanceData.addressTimeIn}</Text>
+        )}
+
+        {/* TIME OUT */}
+        <Text style={styles.sectionLabel}>TIME OUT</Text>
+
+        <View style={styles.buttonContainer}>
+          <Button
+            title="TIME OUT"
+            onPress={handleTimeOut}
+            disabled={!attendanceData.hasTimedIn || attendanceData.hasTimedOut}
+            color={
+              !attendanceData.hasTimedIn || attendanceData.hasTimedOut
+                ? "gray"
+                : "red"
+            }
+          />
+        </View>
+
+        {attendanceData.timeOutSelfieUri && (
+          <TouchableOpacity
+            onPress={() => viewSelfie(attendanceData.timeOutSelfieUri!)}
+          >
+            <View style={styles.iconContainer}>
+              <Ionicons name="eye" size={24} color="blue" />
+              <Text style={styles.viewText}>View Time Out Selfie</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {attendanceData.timeOutTimestamp && (
+          <Text style={styles.timestamp}>
+            {" "}
+            {attendanceData.timeOutTimestamp}
+          </Text>
+        )}
+
+        {attendanceData.addressTimeOut && (
+          <Text style={styles.timestamp}> {attendanceData.addressTimeOut}</Text>
+        )}
+
+        {/* Modal to View Selfie Image */}
+        {selectedSelfieUri && (
+          <Modal visible={modalVisible} transparent={true} animationType="fade">
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Image
+                  source={{ uri: selectedSelfieUri }}
+                  style={styles.modalImage}
+                  resizeMode="contain"
+                />
+                <Button title="Close" onPress={() => setModalVisible(false)} />
+              </View>
+            </View>
+          </Modal>
+        )}
+      </View>
+    </View>
+  );
+};
+
+export default AttendanceScreen;
