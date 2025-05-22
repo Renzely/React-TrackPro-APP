@@ -34,11 +34,14 @@ const SignUp = () => {
     }
 
     try {
-      const res = await fetch("http://192.168.50.55:3001/signup", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        "https://react-rc-ugc-v2-backend.onrender.com/signup",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        }
+      );
 
       const data = await res.json();
       if (res.ok) {
@@ -54,11 +57,14 @@ const SignUp = () => {
 
   const handleVerifyOtp = async () => {
     try {
-      const res = await fetch("http://192.168.50.55:3001/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, otp }),
-      });
+      const res = await fetch(
+        "https://react-rc-ugc-v2-backend.onrender.com/verify-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: form.email, otp }),
+        }
+      );
 
       const data = await res.json();
       if (res.ok) {

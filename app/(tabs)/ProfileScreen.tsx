@@ -50,11 +50,14 @@ const ProfileScreen = () => {
           setUserData(parsedUser);
         } else {
           // Online login: Fetch from API
-          const response = await fetch("http://192.168.50.55:3001/profile", {
-            headers: {
-              Authorization: `Bearer ${userToken}`,
-            },
-          });
+          const response = await fetch(
+            "https://react-rc-ugc-v2-backend.onrender.com/profile",
+            {
+              headers: {
+                Authorization: `Bearer ${userToken}`,
+              },
+            }
+          );
 
           if (!response.ok) throw new Error("Failed to fetch profile");
           const data = await response.json();

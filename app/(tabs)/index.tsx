@@ -53,11 +53,14 @@ const LoginScreen = () => {
 
     try {
       // Online login only
-      const response = await fetch("http://192.168.50.55:3001/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        "https://react-rc-ugc-v2-backend.onrender.com/login",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       const data = await response.json();
 
@@ -160,6 +163,12 @@ const LoginScreen = () => {
         onPress={() => router.push("/SignUp")}
       >
         <Text style={loginStyles.signupText}>Create Account</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={loginStyles.signupButton}
+        onPress={() => router.push("/ForgotPasswordScreen")}
+      >
+        <Text style={loginStyles.signupText}>Forgot Password?</Text>
       </TouchableOpacity>
     </View>
   );

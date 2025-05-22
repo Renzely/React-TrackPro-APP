@@ -6,6 +6,7 @@ import AttendanceScreen from "./AttendaceScreen";
 import QTTScreen from "./QTTScreen";
 import CompetitorsScreen from "./CompetitorsScreen";
 import ProfileScreen from "./ProfileScreen";
+import ExpiryScreen from "./ExpiryScreen";
 
 // Bottom Tab Navigator
 const Tab = createBottomTabNavigator();
@@ -28,6 +29,9 @@ const Screens = () => {
               case "Competitors":
                 iconName = "documents-outline";
                 break;
+              case "Expiry":
+                iconName = "today-outline";
+                break;
               case "Profile":
                 iconName = "person-outline";
                 break;
@@ -44,6 +48,7 @@ const Screens = () => {
       >
         <Tab.Screen name="QTT" component={QTTScreen} />
         <Tab.Screen name="Competitors" component={CompetitorsScreen} />
+        <Tab.Screen name="Expiry" component={ExpiryScreen} />
         <Tab.Screen name="Attendance" component={AttendanceScreen} />
         <Tab.Screen name="Profile" component={ProfileScreen} />
       </Tab.Navigator>
