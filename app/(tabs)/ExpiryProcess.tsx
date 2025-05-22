@@ -16,38 +16,26 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 
-const Competitors = () => {
+type ExpiryEntry = {
+  month: string;
+  sku: string;
+  expiration: string;
+};
+
+const Expiry = () => {
   const navigation = useNavigation();
   const router = useRouter();
 
   const [date, setDate] = useState("");
   const [merchandiser, setMerchandiser] = useState("");
-  const [store, setStore] = useState("");
-  const [company, setCompany] = useState("");
-  const [brand, setBrand] = useState("");
-  const [promoDetails, setPromoDetails] = useState("");
-  const [displayLocation, setDisplayLocation] = useState("");
-  const [pricing, setPricing] = useState("");
-  const [duration, setDuration] = useState("");
-  const [impact, setImpact] = useState("");
-  const [feedback, setFeedback] = useState("");
+
   const [open, setOpen] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState("");
+  const [expiryEntries, setExpiryEntries] = useState<ExpiryEntry[]>([
+    { month: "", sku: "", expiration: "" },
+  ]);
   const [outletOptions, setOutletOptions] = useState([
     { label: "Select Branch", value: "" },
-  ]);
-
-  // Promotional type dropdown
-  const [promoType, setPromoType] = useState<string | null>(null);
-  const [promoItems] = useState([
-    { label: "Buy One Take One", value: "Buy One Take One" },
-    { label: "With Free Item", value: "With Free Item" },
-    { label: "New Product", value: "New Product" },
-    { label: "Price Decrease", value: "Price Decrease" },
-    { label: "Sell-in Promotional", value: "Sell-in Promotional" },
-    { label: "Category Management (CatMan)", value: "CatMan" },
-    { label: "Checkout Counter Display or Promo Area", value: "Checkout" },
-    { label: "Redemption", value: "Redemption" },
   ]);
 
   useEffect(() => {
@@ -106,25 +94,57 @@ const Competitors = () => {
     loadOutlets();
   }, []);
 
-  const handleClear = () => {
-    setDate(new Date().toISOString().split("T")[0]);
-    setMerchandiser("");
-    setSelectedOutlet("");
-    setStore("");
-    setCompany("");
-    setBrand("");
-    setPromoType(null);
-    setPromoDetails("");
-    setDisplayLocation("");
-    setPricing("");
-    setDuration("");
-    setImpact("");
-    setFeedback("");
+  const handleRemoveEntry = (index: number) => {
+    const updatedEntries = expiryEntries.filter((_, i) => i !== index);
+    setExpiryEntries(updatedEntries);
+  };
+
+  const getFutureMonths = () => {
+    const now = new Date();
+    const months = [];
+    for (let i = now.getMonth() + 1; i < 12; i++) {
+      const monthName = new Date(0, i).toLocaleString("default", {
+        month: "long",
+      });
+      months.push({ label: monthName, value: monthName });
+    }
+    return months;
+  };
+
+  const handleAddEntry = () => {
+    setExpiryEntries([
+      ...expiryEntries,
+      { month: "", sku: "", expiration: "" },
+    ]);
+  };
+
+  const handleChangeEntry = (
+    index: number,
+    field: "month" | "sku" | "expiration",
+    value: string
+  ) => {
+    const updatedEntries = [...expiryEntries];
+    updatedEntries[index][field] = value;
+    setExpiryEntries(updatedEntries);
   };
 
   // New Save function to POST data to backend
   const handleSubmit = async () => {
     try {
+      if (!selectedOutlet) {
+        Alert.alert("Validation Error", "Please select an outlet.");
+        return;
+      }
+
+      const hasEmptyFields = expiryEntries.some(
+        (entry) => !entry.month || !entry.sku.trim() || !entry.expiration.trim()
+      );
+
+      if (hasEmptyFields) {
+        Alert.alert("Validation Error", "Please fill in all expiry fields.");
+        return;
+      }
+
       const userEmail = await AsyncStorage.getItem("userEmail");
       if (!userEmail) {
         Alert.alert("Error", "User email not found. Please login again.");
@@ -135,21 +155,12 @@ const Competitors = () => {
         date,
         merchandiser,
         outlet: selectedOutlet,
-        store,
-        company,
-        brand,
-        promoType,
-        promoDetails,
-        displayLocation,
-        pricing,
-        duration,
-        impact,
-        feedback,
-        userEmail, // Added here
+        expiryEntries,
+        userEmail,
       };
 
       const response = await fetch(
-        "https://react-rc-ugc-v2-backend.onrender.com/competitors/save",
+        "https://react-rc-ugc-v2-backend.onrender.com/expiry/save",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -158,9 +169,8 @@ const Competitors = () => {
       );
 
       if (response.ok) {
-        Alert.alert("Success", "Competitor data saved successfully.");
-        handleClear();
-        // navigation.goBack(); // or router.replace("/someRoute");
+        Alert.alert("Success", "Expiry data saved successfully.");
+        // navigation.goBack();
       } else {
         Alert.alert("Error", "Failed to save data.");
       }
@@ -181,7 +191,7 @@ const Competitors = () => {
       <View>
         <View>
           <View style={styles.appBarCompetitor}>
-            <Text style={styles.appBarTitleCompetitor}>COMPETITOR PROCESS</Text>
+            <Text style={styles.appBarTitleCompetitor}>EXPIRY PROCESS</Text>
           </View>
         </View>
 
@@ -216,97 +226,77 @@ const Competitors = () => {
           />
         </View>
 
-        <Text style={styles.labelQTT}>Store</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={store}
-          onChangeText={setStore}
-        />
+        {expiryEntries.map((entry, index) => (
+          <View key={index} style={{ marginBottom: 15 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={[
+                  styles.labelQTT,
+                  { fontWeight: "bold", fontSize: 16, marginTop: 10 },
+                ]}
+              >
+                No. Expiry {index + 1}
+              </Text>
+              {expiryEntries.length > 1 && (
+                <TouchableOpacity onPress={() => handleRemoveEntry(index)}>
+                  <Ionicons name="trash" size={24} color="red" />
+                </TouchableOpacity>
+              )}
+            </View>
 
-        <Text style={styles.labelQTT}>Company</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={company}
-          onChangeText={setCompany}
-        />
+            <Text style={styles.labelQTT}>Month</Text>
+            <View style={styles.pickerWrapperQTT}>
+              <Picker
+                selectedValue={entry.month}
+                onValueChange={(value) =>
+                  handleChangeEntry(index, "month", value)
+                }
+                style={styles.pickerWrapperQTT}
+              >
+                <Picker.Item label="Select Month" value="" />
+                {getFutureMonths().map((month, idx) => (
+                  <Picker.Item
+                    key={idx}
+                    label={month.label}
+                    value={month.value}
+                  />
+                ))}
+              </Picker>
+            </View>
 
-        <Text style={styles.labelQTT}>Brand</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={brand}
-          onChangeText={setBrand}
-        />
+            <Text style={styles.labelQTT}>SKU</Text>
+            <TextInput
+              style={styles.pickerWrapperQTT}
+              value={entry.sku}
+              onChangeText={(text) => handleChangeEntry(index, "sku", text)}
+              placeholder="Enter SKU"
+            />
 
-        <Text style={styles.labelQTT}>Promotional Type</Text>
-        <View style={styles.pickerWrapperQTT}>
-          <Picker
-            selectedValue={promoType}
-            onValueChange={(itemValue) => setPromoType(itemValue)}
-            style={{ height: 50 }}
-          >
-            <Picker.Item label="Select Type" value={null} />
-            {promoItems.map((item, index) => (
-              <Picker.Item key={index} label={item.label} value={item.value} />
-            ))}
-          </Picker>
-        </View>
-
-        <Text style={styles.labelQTT}>Promotional Type Details</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={promoDetails}
-          onChangeText={setPromoDetails}
-        />
-
-        <Text style={styles.labelQTT}>Display Location</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={displayLocation}
-          onChangeText={setDisplayLocation}
-        />
-
-        <Text style={styles.labelQTT}>Pricing</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={pricing}
-          onChangeText={setPricing}
-        />
-
-        <Text style={styles.labelQTT}>Duration of Promo</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={duration}
-          onChangeText={setDuration}
-        />
-
-        <Text style={styles.labelQTT}>Impact to our Product</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={impact}
-          onChangeText={setImpact}
-        />
-
-        <Text style={styles.labelQTT}>Customer Feedback</Text>
-        <TextInput
-          style={styles.pickerWrapperQTT}
-          value={feedback}
-          onChangeText={setFeedback}
-        />
+            <Text style={styles.labelQTT}>Expiration</Text>
+            <TextInput
+              style={styles.pickerWrapperQTT}
+              value={entry.expiration}
+              onChangeText={(text) =>
+                handleChangeEntry(index, "expiration", text)
+              }
+              placeholder="Enter Expiration Date"
+            />
+          </View>
+        ))}
 
         <View style={styles.buttonRowQTT}>
-          <TouchableOpacity onPress={handleClear} style={styles.iconButton}>
-            <Ionicons name="trash-outline" size={24} color="gray" />
-            <Text style={styles.iconLabel}>Clear</Text>
-          </TouchableOpacity>
-
           <Button title="Submit" onPress={handleSubmit} />
-
+          <Button title="Add" onPress={handleAddEntry} />
           <Button
             title="Cancel"
             color="#d9534f"
-            onPress={() => {
-              navigation.goBack();
-            }}
+            onPress={() => navigation.goBack()}
           />
         </View>
       </View>
@@ -314,4 +304,4 @@ const Competitors = () => {
   );
 };
 
-export default Competitors;
+export default Expiry;

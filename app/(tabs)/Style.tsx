@@ -299,12 +299,53 @@ const loginStyles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100, // for spacing below scroll content
   },
-  titleQTT: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+
+  gallerybutton: {
+    height: 50, // Desired height
+    backgroundColor: "#2196F3",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 8,
+    marginTop: 10,
   },
+  appBarCompetitor: {
+    height: 60,
+    backgroundColor: "#0aafeb", // valid #0aafeb color
+    justifyContent: "center",
+    paddingHorizontal: 20, // add padding for spacing
+  },
+
+  appBarTitleCompetitor: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+  appBarQTT: {
+    height: 60,
+    backgroundColor: "#0aafeb", // valid #0aafeb color
+    justifyContent: "center",
+    paddingHorizontal: 20, // add padding for spacing
+  },
+
+  appBarTitleQTT: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  appBarExpiry: {
+    height: 60,
+    backgroundColor: "#0aafeb", // valid #0aafeb color
+    justifyContent: "center",
+    paddingHorizontal: 20, // add padding for spacing
+  },
+
+  appBarTitleExpiry: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
   noHistoryText: {
     textAlign: "center",
     color: "#999",

@@ -24,7 +24,7 @@ const QTTScreen = () => {
         console.log("Fetching QTT history for email:", email);
 
         const response = await fetch(
-          `http://192.168.50.55:3001/QTThistory?email=${encodeURIComponent(
+          `https://react-rc-ugc-v2-backend.onrender.com/QTThistory?email=${encodeURIComponent(
             email
           )}`
         );
@@ -65,9 +65,11 @@ const QTTScreen = () => {
 
   return (
     <View style={styles.pageContainer}>
-      <ScrollView contentContainerStyle={styles.containerQTTHistory}>
-        <Text style={styles.titleQTT}>QTT History</Text>
+      <View style={styles.appBarAttendance}>
+        <Text style={styles.appBarTitleAttendance}>QTT HISTORY</Text>
+      </View>
 
+      <ScrollView contentContainerStyle={styles.containerQTTHistory}>
         {historyData.length === 0 ? (
           <Text style={styles.noHistoryText}>No history found.</Text>
         ) : (

@@ -1,87 +1,85 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
+  TextInput,
+  Button,
   TouchableOpacity,
+  Alert,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useIsFocused } from "@react-navigation/native";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { Ionicons } from "@expo/vector-icons";
 import styles from "./Style";
 
-type RootStackParamList = {
-  Navigator: undefined;
-  Competitors: undefined;
-  CompetitorProcess: undefined;
-};
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { useNavigation, useIsFocused } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-type CompetitorsScreenNavigationProp = NativeStackNavigationProp<
-  RootStackParamList,
-  "Competitors"
->;
-
-type CompetitorData = {
+type ExpiryData = {
   _id: string;
   date: string;
   merchandiser: string;
   outlet: string;
-  store?: string;
-  company?: string;
-  brand?: string;
-  promoType?: string | null;
-  promoDetails?: string;
-  displayLocation?: string;
-  pricing?: string;
-  duration?: string;
-  impact?: string;
-  feedback?: string;
+  userEmail: string;
+  expiryEntries: {
+    month: string;
+    sku: string;
+    expiration: string;
+  }[];
 };
 
-const CompetitorsScreen = () => {
-  const navigation = useNavigation<CompetitorsScreenNavigationProp>();
-  const isFocused = useIsFocused(); // <-- Track screen focus
-  const [competitors, setCompetitors] = useState<CompetitorData[]>([]);
+type RootStackParamList = {
+  Navigator: undefined;
+  ExpiryProcess: undefined;
+  ExpiryScreen: undefined;
+};
+
+type ExpiryScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "ExpiryProcess"
+>;
+
+const ExpiryScreen = () => {
+  const router = useRouter();
+  const navigation = useNavigation<ExpiryScreenNavigationProp>();
+  const isFocused = useIsFocused();
+  const [expiryData, setExpiryData] = useState<ExpiryData[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load userEmail once on mount
     const getUserEmail = async () => {
-      const storedEmail = await AsyncStorage.getItem("userEmail");
-      setUserEmail(storedEmail);
+      const email = await AsyncStorage.getItem("userEmail");
+      setUserEmail(email);
     };
     getUserEmail();
   }, []);
 
   useEffect(() => {
-    // Re-fetch data when screen is focused and userEmail is available
     if (userEmail && isFocused) {
-      fetchCompetitors(userEmail);
+      fetchExpiryHistory(userEmail);
     }
   }, [userEmail, isFocused]);
 
-  const fetchCompetitors = async (email: string) => {
+  const fetchExpiryHistory = async (email: string) => {
     try {
       setLoading(true);
-
       const response = await fetch(
-        `https://react-rc-ugc-v2-backend.onrender.com/competitors/history?email=${encodeURIComponent(
+        `https://react-rc-ugc-v2-backend.onrender.com/expiry/history?email=${encodeURIComponent(
           email
         )}`
       );
-      if (!response.ok) throw new Error("Failed to fetch competitors");
+      if (!response.ok) throw new Error("Failed to fetch expiry data");
 
       const data = await response.json();
-
-      setCompetitors(data);
+      setExpiryData(data);
     } catch (error) {
       console.error("Fetch error:", error);
-      setCompetitors([]);
+      setExpiryData([]);
     } finally {
       setLoading(false);
     }
@@ -93,16 +91,16 @@ const CompetitorsScreen = () => {
 
   return (
     <View style={styles.pageContainer}>
-      <View style={styles.appBarCompetitor}>
-        <Text style={styles.appBarTitleCompetitor}>COMPETITOR HISTORY</Text>
+      <View style={styles.appBarExpiry}>
+        <Text style={styles.appBarTitleExpiry}>EXPIRY HISTORY</Text>
       </View>
       <ScrollView contentContainerStyle={styles.containerQTTHistory}>
         {loading ? (
           <ActivityIndicator size="large" color="#4caf50" />
-        ) : competitors.length === 0 ? (
+        ) : expiryData.length === 0 ? (
           <Text style={styles.noHistoryText}>No history found.</Text>
         ) : (
-          competitors.map((item, index) => (
+          expiryData.map((item, index) => (
             <TouchableOpacity
               key={item._id}
               style={styles.card}
@@ -121,16 +119,14 @@ const CompetitorsScreen = () => {
               {expandedIndex === index && (
                 <View style={styles.cardContent}>
                   <Text>Merchandiser: {item.merchandiser}</Text>
-                  <Text>Store: {item.store || "N/A"}</Text>
-                  <Text>Company: {item.company || "N/A"}</Text>
-                  <Text>Brand: {item.brand || "N/A"}</Text>
-                  <Text>Promo Type: {item.promoType || "N/A"}</Text>
-                  <Text>Promo Details: {item.promoDetails || "N/A"}</Text>
-                  <Text>Display Location: {item.displayLocation || "N/A"}</Text>
-                  <Text>Pricing: {item.pricing || "N/A"}</Text>
-                  <Text>Duration: {item.duration || "N/A"}</Text>
-                  <Text>Impact: {item.impact || "N/A"}</Text>
-                  <Text>Feedback: {item.feedback || "N/A"}</Text>
+                  <Text>Outlet: {item.outlet || "N/A"}</Text>
+                  {item.expiryEntries.map((entry, i) => (
+                    <View key={i} style={{ marginVertical: 4 }}>
+                      <Text>• SKU: {entry.sku}</Text>
+                      <Text>Month: {entry.month}</Text>
+                      <Text>Expiration: {entry.expiration}</Text>
+                    </View>
+                  ))}
                 </View>
               )}
             </TouchableOpacity>
@@ -140,7 +136,7 @@ const CompetitorsScreen = () => {
 
       <TouchableOpacity
         style={styles.fabQTT}
-        onPress={() => navigation.navigate("CompetitorProcess")}
+        onPress={() => navigation.navigate("ExpiryProcess")}
       >
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
@@ -148,4 +144,4 @@ const CompetitorsScreen = () => {
   );
 };
 
-export default CompetitorsScreen;
+export default ExpiryScreen;

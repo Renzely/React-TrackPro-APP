@@ -115,13 +115,16 @@ const QTTProcess = () => {
           return;
         }
 
-        const response = await fetch("http://192.168.50.55:3001/user/outlets", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          "https://react-rc-ugc-v2-backend.onrender.com/user/outlets",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (response.ok) {
           const outlets = await response.json();
@@ -172,11 +175,14 @@ const QTTProcess = () => {
 
   const uploadToS3 = async (uri: string, fileName: string) => {
     try {
-      const res = await fetch("http://192.168.50.55:3001/get-qtt-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileName }),
-      });
+      const res = await fetch(
+        "https://react-rc-ugc-v2-backend.onrender.com/get-qtt-url",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName }),
+        }
+      );
 
       const rawText = await res.text();
 
@@ -287,11 +293,14 @@ const QTTProcess = () => {
       }
 
       // Submit to backend
-      const response = await fetch("http://192.168.50.55:3001/QTTsubmit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        "https://react-rc-ugc-v2-backend.onrender.com/QTTsubmit",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const result = await response.json();
 
@@ -321,14 +330,16 @@ const QTTProcess = () => {
 
   return (
     <KeyboardAwareScrollView
-      style={styles.containerQTT}
+      style={styles.pageContainer}
       contentContainerStyle={{ paddingBottom: 40 }}
       enableOnAndroid={true}
       extraScrollHeight={100}
       keyboardShouldPersistTaps="handled"
     >
       <View>
-        <Text style={styles.headerQTT}>QTT Process</Text>
+        <View style={styles.appBarCompetitor}>
+          <Text style={styles.appBarTitleCompetitor}>QTT PROCESS</Text>
+        </View>
 
         <Text style={styles.labelQTT}>Select Type</Text>
         <View style={styles.pickerWrapperQTT}>
@@ -363,15 +374,20 @@ const QTTProcess = () => {
                 setItems={setOutletOptions}
                 searchable={true}
                 placeholder="Select Branch"
-                style={{ width: 365 }}
-                dropDownContainerStyle={{ width: 365 }}
+                style={{ width: 407 }}
+                dropDownContainerStyle={{ width: 407 }}
                 listMode="SCROLLVIEW"
               />
             </View>
-            <Button
-              title="Access Gallery (Before)"
+            <TouchableOpacity
+              style={styles.gallerybutton}
               onPress={() => openGallery("before")}
-            />
+            >
+              <Text style={{ color: "#fff", fontSize: 16 }}>
+                Access Gallery (Before)
+              </Text>
+            </TouchableOpacity>
+
             {beforeImage && (
               <Pressable onPress={() => openImagePreview(beforeImage)}>
                 <View style={{ alignItems: "center", marginTop: 15 }}>
@@ -418,10 +434,15 @@ const QTTProcess = () => {
               </>
             )}
 
-            <Button
-              title="Access Gallery (After)"
+            <TouchableOpacity
+              style={styles.gallerybutton}
               onPress={() => openGallery("after")}
-            />
+            >
+              <Text style={{ color: "#fff", fontSize: 16 }}>
+                Access Gallery (After)
+              </Text>
+            </TouchableOpacity>
+
             {afterImage && (
               <Pressable onPress={() => openImagePreview(afterImage)}>
                 <View style={{ alignItems: "center", marginTop: 15 }}>
