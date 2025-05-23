@@ -238,7 +238,9 @@ const QTTProcess = () => {
       }
 
       // Validate outlet
-      if (!outlet) {
+      if (!selectedOutlet) {
+        console.log("Selected outlet:", selectedOutlet);
+
         Alert.alert("Missing Fields", "Please Select Outlet.");
         return;
       }
@@ -277,7 +279,7 @@ const QTTProcess = () => {
         userType,
         date,
         merchandiser,
-        outlet,
+        outlet: selectedOutlet,
         beforeImageKey: beforeKey,
         afterImageKey: afterKey,
         userEmail, // Added here
@@ -362,7 +364,12 @@ const QTTProcess = () => {
               editable={false}
               style={styles.pickerWrapperQTT}
             />
-
+            <Text style={styles.labelQTT}>Merchandiser</Text>
+            <TextInput
+              style={styles.pickerWrapperQTT}
+              value={merchandiser}
+              onChangeText={setMerchandiser}
+            />
             <Text style={styles.labelQTT}>Select Outlet</Text>
             <View style={styles.pickerQTT}>
               <DropDownPicker
@@ -372,7 +379,7 @@ const QTTProcess = () => {
                 setOpen={setOpen}
                 setValue={setSelectedOutlet}
                 setItems={setOutletOptions}
-                searchable={true}
+                searchable
                 placeholder="Select Branch"
                 style={{ width: 407 }}
                 dropDownContainerStyle={{ width: 407 }}
@@ -498,14 +505,6 @@ const QTTProcess = () => {
           </>
         )}
       </View>
-      <>
-        <TextInput
-          value={merchandiser}
-          onChangeText={setMerchandiser}
-          style={{ height: 0, opacity: 0 }}
-          editable={false}
-        />
-      </>
     </KeyboardAwareScrollView>
   );
 };

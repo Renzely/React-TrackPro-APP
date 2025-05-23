@@ -52,6 +52,7 @@ const AttendanceScreen = () => {
     timeOutSelfieUri: null,
   });
 
+  // TIME and DAY STAMP
   useEffect(() => {
     const updateDateTime = () => {
       const now = new Date();
@@ -74,6 +75,18 @@ const AttendanceScreen = () => {
     const interval = setInterval(updateDateTime, 60000);
     return () => clearInterval(interval);
   }, []);
+
+  //TIME AND DAY FOR TIME STAMP
+
+  const formatTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString("en-US", {
+      weekday: "long", // e.g., "Friday"
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true, // Use 12-hour format with AM/PM
+    });
+  };
 
   const viewSelfie = (uri: string) => {
     setSelectedSelfieUri(uri);
@@ -130,13 +143,16 @@ const AttendanceScreen = () => {
           return;
         }
 
-        const response = await fetch("http://192.168.50.55:3001/user/outlets", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          "https://react-rc-ugc-v2-backend.onrender.com/user/outlets",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (response.ok) {
           const outlets = await response.json();
@@ -182,7 +198,7 @@ const AttendanceScreen = () => {
     try {
       const today = new Date().toISOString().split("T")[0];
       const response = await fetch(
-        `http://192.168.50.55:3001/attendance/status?email=${email}&outlet=${outlet}&date=${today}`,
+        `https://react-rc-ugc-v2-backend.onrender.com/attendance/status?email=${email}&outlet=${outlet}&date=${today}`,
         {
           method: "GET",
           headers: {
@@ -252,7 +268,7 @@ const AttendanceScreen = () => {
 
       const fileName = `Time_In_(${email}).jpg`;
       const presignRes = await fetch(
-        "http://192.168.50.55:3001/save-attendance-images",
+        "https://react-rc-ugc-v2-backend.onrender.com/save-attendance-images",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -294,7 +310,7 @@ const AttendanceScreen = () => {
 
       // Save attendance to backend
       const saveRes = await fetch(
-        "http://192.168.50.55:3001/attendance/time-in",
+        "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-in",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -352,7 +368,7 @@ const AttendanceScreen = () => {
       const fileName = `Time_Out_(${email}).jpg`;
 
       const presignRes = await fetch(
-        "http://192.168.50.55:3001/save-attendance-images",
+        "https://react-rc-ugc-v2-backend.onrender.com/save-attendance-images",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -395,7 +411,7 @@ const AttendanceScreen = () => {
 
       // Save to backend
       const saveRes = await fetch(
-        "http://192.168.50.55:3001/attendance/time-out",
+        "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-out",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -482,8 +498,7 @@ const AttendanceScreen = () => {
 
         {attendanceData.timeInTimestamp && (
           <Text style={styles.timestamp}>
-            {" "}
-            {attendanceData.timeInTimestamp}
+            {formatTimestamp(attendanceData.timeInTimestamp)}
           </Text>
         )}
 
@@ -520,8 +535,7 @@ const AttendanceScreen = () => {
 
         {attendanceData.timeOutTimestamp && (
           <Text style={styles.timestamp}>
-            {" "}
-            {attendanceData.timeOutTimestamp}
+            {formatTimestamp(attendanceData.timeOutTimestamp)}
           </Text>
         )}
 

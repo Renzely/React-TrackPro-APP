@@ -26,6 +26,7 @@ type UserData = {
   lastName: string;
   email: string;
   contactNumber: string;
+  role: string;
 };
 
 const ProfileScreen = () => {
@@ -121,6 +122,13 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.infoContainer}>
+          <Text style={styles.label}>Role</Text>
+          <TextInput
+            value={userData.role}
+            editable={false}
+            style={styles.input}
+          />
+
           <Text style={styles.label}>Email</Text>
           <TextInput
             value={userData.email}
