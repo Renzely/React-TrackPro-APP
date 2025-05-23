@@ -1,6 +1,7 @@
 // context/AuthContext.tsx
 import React, { useContext, createContext, useState, ReactNode } from "react";
 import { JSX } from "react/jsx-runtime";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Define the shape of the context
 interface AuthContextType {
@@ -17,11 +18,29 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
-  const [userToken, setUserToken] = useState<string | null>(null);
+export const AuthProvider = ({
+  children,
+  initialToken = null,
+}: AuthProviderProps & { initialToken?: string | null }): JSX.Element => {
+  const [userToken, setUserToken] = useState<string | null>(initialToken);
 
-  const signIn = (token: string): void => setUserToken(token);
-  const signOut = (): void => setUserToken(null);
+  const signIn = async (token: string): Promise<void> => {
+    try {
+      await AsyncStorage.setItem("token", token);
+      setUserToken(token);
+    } catch (error) {
+      console.error("Failed to save token", error);
+    }
+  };
+
+  const signOut = async (): Promise<void> => {
+    try {
+      await AsyncStorage.removeItem("token");
+      setUserToken(null);
+    } catch (error) {
+      console.error("Failed to remove token", error);
+    }
+  };
 
   return (
     <AuthContext.Provider value={{ userToken, signIn, signOut }}>

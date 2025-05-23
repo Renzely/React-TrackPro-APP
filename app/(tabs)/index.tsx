@@ -38,6 +38,18 @@ const LoginScreen = () => {
     return () => unsubscribe();
   }, []);
 
+  // Add this useEffect at the top of your LoginScreen component
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem("token");
+      if (token) {
+        router.replace("/(tabs)/Navigator");
+      }
+    };
+
+    checkToken();
+  }, []);
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert("Input Error", "Please enter both email and password.");
@@ -73,9 +85,10 @@ const LoginScreen = () => {
       const user = data.user;
 
       // Save user email and token for fetching filtered data later
+
       await AsyncStorage.setItem("userEmail", user?.email || email);
       await AsyncStorage.setItem("token", data.token);
-
+      await AsyncStorage.setItem("user", JSON.stringify(user));
       await signIn(data.token);
       Alert.alert("Success", "Login successful!");
       router.replace("/(tabs)/Navigator");

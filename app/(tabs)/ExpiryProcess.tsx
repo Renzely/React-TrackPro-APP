@@ -251,7 +251,7 @@ const Expiry = () => {
             </View>
 
             <Text style={styles.labelQTT}>Month</Text>
-            <View style={styles.pickerWrapperQTT}>
+            <View style={styles.pickerQTT}>
               <Picker
                 selectedValue={entry.month}
                 onValueChange={(value) =>

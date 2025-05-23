@@ -238,7 +238,7 @@ const Competitors = () => {
         />
 
         <Text style={styles.labelQTT}>Promotional Type</Text>
-        <View style={styles.pickerWrapperQTT}>
+        <View style={styles.pickerQTT}>
           <Picker
             selectedValue={promoType}
             onValueChange={(itemValue) => setPromoType(itemValue)}

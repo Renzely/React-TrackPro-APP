@@ -21,7 +21,6 @@ const QTTScreen = () => {
           setLoading(false);
           return;
         }
-        console.log("Fetching QTT history for email:", email);
 
         const response = await fetch(
           `https://react-rc-ugc-v2-backend.onrender.com/QTThistory?email=${encodeURIComponent(
