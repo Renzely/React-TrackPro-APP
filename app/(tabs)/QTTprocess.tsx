@@ -348,11 +348,24 @@ const QTTProcess = () => {
           <Picker
             selectedValue={userType}
             onValueChange={(itemValue) => setUserType(itemValue)}
-            style={styles.pickerQTT}
+            style={styles.pickerWrapperQTT}
+            dropdownIconColor={"black"}
           >
-            <Picker.Item label="Select" value="" />
-            <Picker.Item label="PSR" value="PSR" />
-            <Picker.Item label="VET" value="VET" />
+            <Picker.Item
+              style={styles.pickerWrapperQTT}
+              label="Select"
+              value=""
+            />
+            <Picker.Item
+              style={styles.pickerWrapperQTT}
+              label="PSR"
+              value="PSR"
+            />
+            <Picker.Item
+              style={styles.pickerWrapperQTT}
+              label="VET"
+              value="VET"
+            />
           </Picker>
         </View>
 
@@ -366,6 +379,7 @@ const QTTProcess = () => {
             />
             <Text style={styles.labelQTT}>Merchandiser</Text>
             <TextInput
+              editable={false}
               style={styles.pickerWrapperQTT}
               value={merchandiser}
               onChangeText={setMerchandiser}

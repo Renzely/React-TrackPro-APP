@@ -104,7 +104,7 @@ const LoginScreen = () => {
     <View style={loginStyles.container}>
       <View style={loginStyles.logoPlaceholder}>
         <Image
-          source={require("../../assets/images/RC_UGC.png")}
+          source={require("../../assets/images/TrackPro-logo.png")}
           style={loginStyles.logoImage}
           resizeMode="contain"
         />
