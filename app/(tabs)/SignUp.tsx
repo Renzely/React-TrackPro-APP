@@ -98,6 +98,7 @@ const SignUp = () => {
               color: "black",
               marginBottom: 20,
             }}
+            dropdownIconColor={"black"}
           >
             <Picker.Item label="RC" value="RC" />
             <Picker.Item label="UGC" value="UGC" />

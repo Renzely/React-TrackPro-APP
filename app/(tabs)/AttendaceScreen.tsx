@@ -161,7 +161,14 @@ const AttendanceScreen = () => {
             value: outlet,
           }));
 
+          // Load saved outlet
+          const savedOutlet = await AsyncStorage.getItem("outlet");
+
           setOutletOptions([{ label: "Select Branch", value: "" }, ...options]);
+
+          if (savedOutlet) {
+            setSelectedOutlet(savedOutlet);
+          }
         } else {
           console.error("Failed to fetch outlets:", await response.text());
         }
@@ -265,8 +272,8 @@ const AttendanceScreen = () => {
     try {
       const uri = result.assets[0].uri;
       setSelfieUri(uri);
-
-      const fileName = `Time_In_(${email}).jpg`;
+      const timestamp = Date.now();
+      const fileName = `Time_In_${email}_${timestamp}.jpg`;
       const presignRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/save-attendance-images",
         {
@@ -365,7 +372,8 @@ const AttendanceScreen = () => {
 
     try {
       const uri = result.assets[0].uri;
-      const fileName = `Time_Out_(${email}).jpg`;
+      const timestamp = Date.now();
+      const fileName = `Time_Out_${email}_${timestamp}.jpg`;
 
       const presignRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/save-attendance-images",
@@ -447,50 +455,72 @@ const AttendanceScreen = () => {
         <Text style={styles.appBarTitleAttendance}>ATTENDANCE</Text>
       </View>
 
-      <View style={styles.containerAttendance}>
-        {loading && <ActivityIndicator size="large" color="#0000ff" />}
+      {loading && <ActivityIndicator size="large" color="#0aafeb" />}
 
-        <View style={{ alignItems: "center", marginBottom: 20 }}>
-          <Text style={{ fontSize: 24, fontWeight: "600" }}>{currentDate}</Text>
-          <Text style={{ fontSize: 56, fontWeight: "bold", marginTop: 5 }}>
-            {currentTime}
-          </Text>
-        </View>
+      {/* DATE & TIME */}
+      <View style={{ alignItems: "center", marginBottom: 30 }}>
+        <Text style={{ fontSize: 22, fontWeight: "500", color: "#333" }}>
+          {currentDate}
+        </Text>
+        <Text
+          style={{
+            fontSize: 48,
+            fontWeight: "bold",
+            color: "#0aafeb",
+            marginTop: 5,
+          }}
+        >
+          {currentTime}
+        </Text>
+      </View>
 
-        <View style={styles.pickerWrapper}>
-          <DropDownPicker
-            open={open}
-            value={selectedOutlet}
-            items={outletOptions}
-            setOpen={setOpen}
-            setValue={setSelectedOutlet}
-            setItems={setOutletOptions}
-            searchable={true}
-            placeholder="Select Branch"
-            disabled={attendanceData.hasTimedIn && !attendanceData.hasTimedOut}
-            style={{ width: 250 }}
-            dropDownContainerStyle={{ width: 250 }}
-          />
-        </View>
+      {/* BRANCH DROPDOWN */}
+      <DropDownPicker
+        open={open}
+        value={selectedOutlet}
+        items={outletOptions}
+        setOpen={setOpen}
+        setValue={setSelectedOutlet}
+        setItems={setOutletOptions}
+        searchable={true}
+        placeholder="Select Branch"
+        disabled={attendanceData.hasTimedIn && !attendanceData.hasTimedOut}
+        onChangeValue={(value) => {
+          if (value) {
+            AsyncStorage.setItem("outlet", value);
+          }
+        }}
+        style={{
+          marginBottom: 30,
+          borderRadius: 10,
+          borderColor: "#ccc",
+          width: "100%",
+        }}
+        dropDownContainerStyle={{ borderRadius: 10, width: "100%" }}
+      />
 
-        {/* TIME IN */}
-        <Text style={styles.sectionLabel}>TIME IN</Text>
+      {/* TIME IN SECTION */}
+      <Text style={styles.sectionLabel}>TIME IN</Text>
 
-        <View style={styles.buttonContainer}>
-          <Button
-            title="TIME IN"
-            onPress={handleTimeIn}
-            disabled={attendanceData.hasTimedIn}
-            color={attendanceData.hasTimedIn ? "gray" : "#0aafeb"}
-          />
-        </View>
-
+      <TouchableOpacity
+        onPress={handleTimeIn}
+        disabled={attendanceData.hasTimedIn}
+        style={[
+          styles.customButton,
+          {
+            backgroundColor: attendanceData.hasTimedIn ? "#ccc" : "#0aafeb",
+          },
+        ]}
+      >
+        <Text style={styles.buttonText}>TIME IN</Text>
+      </TouchableOpacity>
+      <View style={{ alignItems: "center", marginBottom: 30 }}>
         {attendanceData.timeInSelfieUri && (
           <TouchableOpacity
             onPress={() => viewSelfie(attendanceData.timeInSelfieUri!)}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name="eye" size={24} color="blue" />
+              <Ionicons name="eye" size={24} color="#0aafeb" />
               <Text style={styles.viewText}>View Time In Selfie</Text>
             </View>
           </TouchableOpacity>
@@ -503,31 +533,34 @@ const AttendanceScreen = () => {
         )}
 
         {attendanceData.addressTimeIn && (
-          <Text style={styles.timestamp}> {attendanceData.addressTimeIn}</Text>
+          <Text style={styles.timestamp}>{attendanceData.addressTimeIn}</Text>
         )}
+      </View>
+      {/* TIME OUT SECTION */}
+      <Text style={[styles.sectionLabel, { marginTop: 30 }]}>TIME OUT</Text>
 
-        {/* TIME OUT */}
-        <Text style={styles.sectionLabel}>TIME OUT</Text>
-
-        <View style={styles.buttonContainer}>
-          <Button
-            title="TIME OUT"
-            onPress={handleTimeOut}
-            disabled={!attendanceData.hasTimedIn || attendanceData.hasTimedOut}
-            color={
+      <TouchableOpacity
+        onPress={handleTimeOut}
+        disabled={!attendanceData.hasTimedIn || attendanceData.hasTimedOut}
+        style={[
+          styles.customButton,
+          {
+            backgroundColor:
               !attendanceData.hasTimedIn || attendanceData.hasTimedOut
-                ? "gray"
-                : "red"
-            }
-          />
-        </View>
-
+                ? "#ccc"
+                : "#eb3b5a",
+          },
+        ]}
+      >
+        <Text style={styles.buttonText}>TIME OUT</Text>
+      </TouchableOpacity>
+      <View style={{ alignItems: "center", marginBottom: 30 }}>
         {attendanceData.timeOutSelfieUri && (
           <TouchableOpacity
             onPress={() => viewSelfie(attendanceData.timeOutSelfieUri!)}
           >
             <View style={styles.iconContainer}>
-              <Ionicons name="eye" size={24} color="blue" />
+              <Ionicons name="eye" size={24} color="#0aafeb" />
               <Text style={styles.viewText}>View Time Out Selfie</Text>
             </View>
           </TouchableOpacity>
@@ -540,25 +573,29 @@ const AttendanceScreen = () => {
         )}
 
         {attendanceData.addressTimeOut && (
-          <Text style={styles.timestamp}> {attendanceData.addressTimeOut}</Text>
-        )}
-
-        {/* Modal to View Selfie Image */}
-        {selectedSelfieUri && (
-          <Modal visible={modalVisible} transparent={true} animationType="fade">
-            <View style={styles.modalContainer}>
-              <View style={styles.modalContent}>
-                <Image
-                  source={{ uri: selectedSelfieUri }}
-                  style={styles.modalImage}
-                  resizeMode="contain"
-                />
-                <Button title="Close" onPress={() => setModalVisible(false)} />
-              </View>
-            </View>
-          </Modal>
+          <Text style={styles.timestamp}>{attendanceData.addressTimeOut}</Text>
         )}
       </View>
+      {/* SELFIE MODAL */}
+      {selectedSelfieUri && (
+        <Modal visible={modalVisible} transparent animationType="fade">
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Image
+                source={{ uri: selectedSelfieUri }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                style={styles.closeButton}
+              >
+                <Text style={{ color: "#fff" }}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </View>
   );
 };

@@ -205,6 +205,7 @@ const Expiry = () => {
         <Text style={styles.labelQTT}>Merchandiser</Text>
         <TextInput
           style={styles.pickerWrapperQTT}
+          editable={false}
           value={merchandiser}
           onChangeText={setMerchandiser}
         />
@@ -251,12 +252,13 @@ const Expiry = () => {
             </View>
 
             <Text style={styles.labelQTT}>Month</Text>
-            <View style={styles.pickerQTT}>
+            <View style={styles.pickerWrapperQTT}>
               <Picker
                 selectedValue={entry.month}
                 onValueChange={(value) =>
                   handleChangeEntry(index, "month", value)
                 }
+                dropdownIconColor={"black"}
                 style={styles.pickerWrapperQTT}
               >
                 <Picker.Item label="Select Month" value="" />

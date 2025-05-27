@@ -64,8 +64,8 @@ const loginStyles = StyleSheet.create({
     textAlign: "center",
   },
   logoImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 60, // Half of width/height
     alignSelf: "center",
   },
@@ -413,7 +413,8 @@ const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "black",
     borderRadius: 6,
-    overflow: "hidden", // ensures borderRadius is applied
+    overflow: "hidden",
+    color: "black", // ensures borderRadius is applied
   },
   pickerQTT: {
     height: 50, // optional
@@ -596,7 +597,7 @@ const loginStyles = StyleSheet.create({
   // ATTENDANCE
   safeArea: {
     flex: 1,
-    backgroundColor: "#f2f2f2",
+    backgroundColor: "#fff",
   },
   appBarAttendance: {
     height: 60,
@@ -668,6 +669,21 @@ const loginStyles = StyleSheet.create({
     width: "100%",
     height: 400,
     marginBottom: 15,
+  },
+  customButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  closeButton: {
+    backgroundColor: "#0aafeb",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 15,
+    width: "100%",
   },
 });
 

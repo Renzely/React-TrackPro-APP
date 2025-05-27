@@ -195,6 +195,7 @@ const Competitors = () => {
         <Text style={styles.labelQTT}>Merchandiser</Text>
         <TextInput
           style={styles.pickerWrapperQTT}
+          editable={false}
           value={merchandiser}
           onChangeText={setMerchandiser}
         />
@@ -238,15 +239,25 @@ const Competitors = () => {
         />
 
         <Text style={styles.labelQTT}>Promotional Type</Text>
-        <View style={styles.pickerQTT}>
+        <View style={styles.pickerWrapperQTT}>
           <Picker
             selectedValue={promoType}
             onValueChange={(itemValue) => setPromoType(itemValue)}
-            style={{ height: 50 }}
+            style={styles.pickerWrapperQTT}
+            dropdownIconColor={"black"}
           >
-            <Picker.Item label="Select Type" value={null} />
+            <Picker.Item
+              label="Select Type"
+              value={null}
+              style={styles.pickerWrapperQTT}
+            />
             {promoItems.map((item, index) => (
-              <Picker.Item key={index} label={item.label} value={item.value} />
+              <Picker.Item
+                key={index}
+                label={item.label}
+                value={item.value}
+                style={styles.pickerWrapperQTT}
+              />
             ))}
           </Picker>
         </View>
