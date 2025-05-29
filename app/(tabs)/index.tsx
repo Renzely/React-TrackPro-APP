@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
+import { useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
   Text,
   TextInput,
   TouchableOpacity,
-  Image,
-  Alert,
-  ActivityIndicator,
+  View,
 } from "react-native";
-import { useRouter } from "expo-router";
-import loginStyles from "./Style";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Ionicons } from "@expo/vector-icons";
-import NetInfo from "@react-native-community/netinfo";
 import { useAuth } from "./auth";
+import loginStyles from "./Style";
 
 const LoginScreen = () => {
   const router = useRouter();
