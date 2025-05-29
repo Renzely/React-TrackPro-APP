@@ -695,19 +695,20 @@ const AttendanceScreen = () => {
                     year: "numeric",
                   });
 
-                  function formatTimeTo12Hour(timeStr?: string | null) {
-                    if (!timeStr) return "N/A";
-                    const [hoursStr, minutesStr] = timeStr.split(":");
-                    if (hoursStr === undefined || minutesStr === undefined)
-                      return timeStr;
-                    let hours = parseInt(hoursStr, 10);
-                    const minutes = parseInt(minutesStr, 10);
-                    const ampm = hours >= 12 ? "PM" : "AM";
-                    hours = hours % 12 || 12;
-                    return `${hours}:${minutes
-                      .toString()
-                      .padStart(2, "0")} ${ampm}`;
-                  }
+                  const formatTimestamp = (timestamp?: string | null) => {
+                    if (!timestamp) return "N/A";
+
+                    const date = new Date(timestamp);
+
+                    // Convert to Philippine Time (Asia/Manila) and format nicely with weekday, 12-hour time
+                    return date.toLocaleString("en-US", {
+                      timeZone: "Asia/Manila",
+                      weekday: "long", // e.g. Friday
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true, // 12-hour format with AM/PM
+                    });
+                  };
 
                   return (
                     <View
@@ -738,7 +739,7 @@ const AttendanceScreen = () => {
                             Outlet: {log.outlet}
                           </Text>
 
-                          <Text>Time In: {formatTimeTo12Hour(log.timeIn)}</Text>
+                          <Text>Time In: {formatTimestamp(log.timeIn)}</Text>
                           <Text>
                             Time In Location: {log.addressTimeIn || "N/A"}
                           </Text>
@@ -757,9 +758,7 @@ const AttendanceScreen = () => {
 
                           <View style={{ height: 15 }} />
 
-                          <Text>
-                            Time Out: {formatTimeTo12Hour(log.timeOut)}
-                          </Text>
+                          <Text>Time Out: {formatTimestamp(log.timeOut)}</Text>
                           <Text>
                             Time Out Location: {log.addressTimeOut || "N/A"}
                           </Text>
