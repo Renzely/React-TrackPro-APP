@@ -1,9 +1,9 @@
 // screens/ResetPasswordScreen.tsx
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import loginStyles from "./Style";
+import React, { useState } from "react";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import loginStyles from "./Style";
 
 const ResetPasswordScreen = () => {
   const { email } = useLocalSearchParams();

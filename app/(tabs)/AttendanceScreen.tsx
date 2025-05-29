@@ -1,23 +1,40 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  Alert,
-  Modal,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  Button,
-} from "react-native";
-import * as Location from "expo-location";
-import * as ImagePicker from "expo-image-picker";
-import { Picker } from "@react-native-picker/picker";
-import styles from "./Style";
-import DropDownPicker from "react-native-dropdown-picker";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Modal,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import DropDownPicker from "react-native-dropdown-picker";
+import styles from "./Style";
+
+type TimeLog = {
+  outlet: string;
+  timeIn: string;
+  timeOut?: string | null;
+  addressTimeIn?: string | null;
+  addressTimeOut?: string | null;
+  timeInSelfieUri?: string | null;
+  timeOutSelfieUri?: string | null;
+};
+
+type AttendanceRecord = {
+  date: string;
+  timeLogs: TimeLog[];
+};
 
 const AttendanceScreen = () => {
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [open, setOpen] = useState(false);
@@ -133,6 +150,38 @@ const AttendanceScreen = () => {
       });
     })();
   }, []);
+
+  const fetchAttendanceHistory = async () => {
+    if (!email || !selectedOutlet) {
+      Alert.alert("Please select a branch first.");
+      return;
+    }
+
+    setHistoryLoading(true);
+
+    try {
+      const response = await fetch(
+        `https://react-rc-ugc-v2-backend.onrender.com/attendance/history?email=${email}&outlet=${selectedOutlet}`,
+        {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch attendance history");
+      }
+
+      const data = await response.json();
+      setAttendanceHistory(data);
+      setHistoryModalVisible(true);
+    } catch (error: any) {
+      console.error(error);
+      Alert.alert("Error", error.message || "Failed to fetch history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadOutlets = async () => {
@@ -596,6 +645,146 @@ const AttendanceScreen = () => {
           </View>
         </Modal>
       )}
+
+      {/* ATTENDANCE HISTORY BUTTON */}
+
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: "#357EC7", marginTop: 20 }]}
+        onPress={fetchAttendanceHistory}
+        disabled={loading || historyLoading}
+      >
+        <Text style={styles.buttonText}>
+          {historyLoading ? "Loading..." : "View Attendance History"}
+        </Text>
+      </TouchableOpacity>
+
+      {/*  <View style={styles.appBarAttendance}>
+        <Text style={styles.appBarTitleAttendance}>ATTENDANCE</Text>
+      </View>
+       */}
+
+      {/* ATTENDANCE HISTORY MODAL */}
+
+      <Modal
+        visible={historyModalVisible}
+        animationType="slide"
+        onRequestClose={() => setHistoryModalVisible(false)}
+      >
+        <View style={styles.appBarAttendance}>
+          <Text style={styles.appBarTitleAttendance}>ATTENDANCE HISTORY</Text>
+        </View>
+
+        <View style={{ flex: 1, backgroundColor: "#fff" }}>
+          <ScrollView contentContainerStyle={{ padding: 20 }}>
+            <TouchableOpacity
+              onPress={() => setHistoryModalVisible(false)}
+              style={{ marginBottom: 15 }}
+            >
+              <Text style={{ color: "blue" }}>Close</Text>
+            </TouchableOpacity>
+
+            {attendanceHistory.length === 0 ? (
+              <Text>No attendance records found.</Text>
+            ) : (
+              attendanceHistory.map(
+                (record: AttendanceRecord, index: number) => {
+                  const dateObj = new Date(record.date);
+                  const formattedDate = dateObj.toLocaleDateString(undefined, {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  });
+
+                  function formatTimeTo12Hour(timeStr?: string | null) {
+                    if (!timeStr) return "N/A";
+                    const [hoursStr, minutesStr] = timeStr.split(":");
+                    if (hoursStr === undefined || minutesStr === undefined)
+                      return timeStr;
+                    let hours = parseInt(hoursStr, 10);
+                    const minutes = parseInt(minutesStr, 10);
+                    const ampm = hours >= 12 ? "PM" : "AM";
+                    hours = hours % 12 || 12;
+                    return `${hours}:${minutes
+                      .toString()
+                      .padStart(2, "0")} ${ampm}`;
+                  }
+
+                  return (
+                    <View
+                      key={index}
+                      style={{
+                        marginBottom: 15,
+                        padding: 10,
+                        borderWidth: 1,
+                        borderColor: "#ccc",
+                        borderRadius: 8,
+                      }}
+                    >
+                      <Text>Date: {formattedDate}</Text>
+
+                      {record.timeLogs.map((log: TimeLog, idx: number) => (
+                        <View
+                          key={idx}
+                          style={{
+                            marginTop: 10,
+                            padding: 8,
+                            borderWidth: 1,
+                            borderColor: "#ddd",
+                            borderRadius: 6,
+                            backgroundColor: "#f9f9f9",
+                          }}
+                        >
+                          <Text style={{ fontWeight: "bold", marginBottom: 6 }}>
+                            Outlet: {log.outlet}
+                          </Text>
+
+                          <Text>Time In: {formatTimeTo12Hour(log.timeIn)}</Text>
+                          <Text>
+                            Time In Location: {log.addressTimeIn || "N/A"}
+                          </Text>
+                          {log.timeInSelfieUri ? (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setSelectedSelfieUri(log.timeInSelfieUri!);
+                                setModalVisible(true);
+                              }}
+                            >
+                              <Text style={{ color: "blue" }}>
+                                View Time In Selfie
+                              </Text>
+                            </TouchableOpacity>
+                          ) : null}
+
+                          <View style={{ height: 15 }} />
+
+                          <Text>
+                            Time Out: {formatTimeTo12Hour(log.timeOut)}
+                          </Text>
+                          <Text>
+                            Time Out Location: {log.addressTimeOut || "N/A"}
+                          </Text>
+                          {log.timeOutSelfieUri ? (
+                            <TouchableOpacity
+                              onPress={() => {
+                                setSelectedSelfieUri(log.timeOutSelfieUri!);
+                                setModalVisible(true);
+                              }}
+                            >
+                              <Text style={{ color: "blue" }}>
+                                View Time Out Selfie
+                              </Text>
+                            </TouchableOpacity>
+                          ) : null}
+                        </View>
+                      ))}
+                    </View>
+                  );
+                }
+              )
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 };

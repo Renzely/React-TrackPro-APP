@@ -1,14 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { SafeAreaView, ActivityIndicator, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import AttendanceScreen from "./AttendaceScreen";
-import QTTScreen from "./QTTScreen";
-import CompetitorsScreen from "./CompetitorsScreen";
-import ProfileScreen from "./ProfileScreen";
-import ExpiryScreen from "./ExpiryScreen";
-import { AuthGuard } from "./auth-guard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, SafeAreaView, View } from "react-native";
+import AttendanceScreen from "./AttendanceScreen";
+import CompetitorsScreen from "./CompetitorsScreen";
+import ExpiryScreen from "./ExpiryScreen";
+import ProfileScreen from "./ProfileScreen";
+import QTTScreen from "./QTTScreen";
+import { AuthGuard } from "./auth-guard";
 
 const Tab = createBottomTabNavigator();
 
@@ -50,6 +50,9 @@ const Screens = () => {
                 case "Attendance":
                   iconName = "save-outline";
                   break;
+                case "AttendanceHistory":
+                  iconName = "save-outline";
+                  break;
                 case "QTT":
                   iconName = "document-text-outline";
                   break;
@@ -81,6 +84,7 @@ const Screens = () => {
             </>
           )}
           <Tab.Screen name="Attendance" component={AttendanceScreen} />
+          {/* <Tab.Screen name="AttendanceHistory" component={AttendanceHistory} /> */}
           <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
       </SafeAreaView>

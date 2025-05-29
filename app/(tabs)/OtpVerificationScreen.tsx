@@ -1,7 +1,7 @@
 // screens/OtpVerificationScreen.tsx
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useState } from "react";
+import { Alert, Text, TextInput, TouchableOpacity, View } from "react-native";
 import loginStyles from "./Style";
 
 const OtpVerificationScreen = () => {
