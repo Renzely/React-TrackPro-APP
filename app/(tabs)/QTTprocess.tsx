@@ -1,11 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
+import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
-  Button,
   Image,
   Modal,
   Pressable,
@@ -54,6 +54,7 @@ const Question = ({
 );
 
 const QTTProcess = () => {
+  const navigation = useNavigation();
   const [userType, setUserType] = useState("");
   const [date, setDate] = useState("");
   const [merchandiser, setMerchandiser] = useState("");
@@ -216,6 +217,7 @@ const QTTProcess = () => {
   };
 
   const handleSubmit = async () => {
+    setLoading(true); // start loading
     try {
       const userEmail = await AsyncStorage.getItem("userEmail");
       if (!userEmail) {
@@ -235,7 +237,6 @@ const QTTProcess = () => {
       // Validate outlet
       if (!selectedOutlet) {
         console.log("Selected outlet:", selectedOutlet);
-
         Alert.alert("Missing Fields", "Please Select Outlet.");
         return;
       }
@@ -277,7 +278,7 @@ const QTTProcess = () => {
         outlet: selectedOutlet,
         beforeImageKey: beforeKey,
         afterImageKey: afterKey,
-        userEmail, // Added here
+        userEmail,
       };
 
       if (userType === "PSR") {
@@ -311,6 +312,8 @@ const QTTProcess = () => {
     } catch (err) {
       console.error("QTT Submit Error:", err);
       Alert.alert("Error", "Failed to submit QTT. Please try again.");
+    } finally {
+      setLoading(false); // end loading
     }
   };
 
@@ -504,12 +507,37 @@ const QTTProcess = () => {
                 <Text style={styles.iconLabel}>Clear</Text>
               </TouchableOpacity>
 
-              <Button title="Submit" onPress={handleSubmit} />
-              <Button
-                title="Cancel"
-                color="#d9534f"
-                onPress={() => router.replace("/Navigator")}
-              />
+              <TouchableOpacity
+                onPress={handleSubmit}
+                disabled={loading}
+                style={{
+                  backgroundColor: "#007AFF",
+                  padding: 10,
+                  borderRadius: 8,
+                  alignItems: "center",
+                }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                    Submit
+                  </Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={{
+                  backgroundColor: "#d9534f",
+                  padding: 10,
+                  borderRadius: 8,
+                  alignItems: "center",
+                }}
+              >
+                <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
             </View>
           </>
         )}

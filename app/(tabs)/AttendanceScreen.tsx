@@ -48,6 +48,8 @@ const AttendanceScreen = () => {
   const [selectedSelfieUri, setSelectedSelfieUri] = useState<string | null>(
     null
   );
+  const [isLoadingTimeIn, setIsLoadingTimeIn] = useState(false);
+  const [isLoadingTimeOut, setIsLoadingTimeOut] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attendanceData, setAttendanceData] = useState<{
     hasTimedIn: boolean;
@@ -97,7 +99,7 @@ const AttendanceScreen = () => {
 
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
-    return date.toLocaleString("en-US", {
+    return date.toLocaleString("en-PH", {
       weekday: "long", // e.g., "Friday"
       hour: "numeric",
       minute: "2-digit",
@@ -300,29 +302,32 @@ const AttendanceScreen = () => {
   }, [selectedOutlet, email]);
 
   const handleTimeIn = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Camera access is required to take a selfie.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-      cameraType: ImagePicker.CameraType.front,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      Alert.alert("Selfie is required to Time In.");
-      return;
-    }
-
+    setIsLoadingTimeIn(true);
     try {
+      const permissionResult =
+        await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Camera access is required to take a selfie.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+        cameraType: ImagePicker.CameraType.front,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        Alert.alert("Selfie is required to Time In.");
+        return;
+      }
+
       const uri = result.assets[0].uri;
       setSelfieUri(uri);
       const timestamp = Date.now();
       const fileName = `Time_In_${email}_${timestamp}.jpg`;
+
       const presignRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/save-attendance-images",
         {
@@ -350,7 +355,7 @@ const AttendanceScreen = () => {
       const selfieUrl = url.split("?")[0];
       const now = new Date();
       const date = now.toISOString().split("T")[0];
-      const timeIn = now.toLocaleTimeString("en-US", {
+      const timeIn = now.toLocaleTimeString("en-PH", {
         hour: "numeric",
         minute: "numeric",
         hour12: true,
@@ -364,7 +369,6 @@ const AttendanceScreen = () => {
         );
       }
 
-      // Save attendance to backend
       const saveRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-in",
         {
@@ -383,12 +387,11 @@ const AttendanceScreen = () => {
       );
 
       if (!saveRes.ok) {
-        const errorText = await saveRes.text(); // Read actual error
+        const errorText = await saveRes.text();
         console.error("Time-in backend response:", errorText);
         throw new Error("Failed to save time-in data");
       }
 
-      // Refresh attendance data after successful time-in
       await fetchAttendanceData(selectedOutlet);
       Alert.alert("Time In recorded!");
     } catch (error: unknown) {
@@ -397,29 +400,33 @@ const AttendanceScreen = () => {
         "Failed to upload or save time-in.",
         error instanceof Error ? error.message : String(error)
       );
+    } finally {
+      setIsLoadingTimeIn(false);
     }
   };
 
   const handleTimeOut = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Camera access is required to take a selfie.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: false,
-      quality: 1,
-      cameraType: ImagePicker.CameraType.front,
-    });
-
-    if (result.canceled || !result.assets?.length) {
-      Alert.alert("Selfie is required to Time Out.");
-      return;
-    }
-
+    setIsLoadingTimeOut(true);
     try {
+      const permissionResult =
+        await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Camera access is required to take a selfie.");
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+        cameraType: ImagePicker.CameraType.front,
+      });
+
+      if (result.canceled || !result.assets?.length) {
+        Alert.alert("Selfie is required to Time Out.");
+        return;
+      }
+
       const uri = result.assets[0].uri;
       const timestamp = Date.now();
       const fileName = `Time_Out_${email}_${timestamp}.jpg`;
@@ -434,7 +441,6 @@ const AttendanceScreen = () => {
       );
 
       if (!presignRes.ok) throw new Error("Failed to get upload URL");
-
       const { url } = await presignRes.json();
 
       const imageBlob = await fetch(uri).then((r) => r.blob());
@@ -452,7 +458,7 @@ const AttendanceScreen = () => {
       const timeOutSelfieUrl = url.split("?")[0];
       const now = new Date();
       const date = now.toISOString().split("T")[0];
-      const timeOut = now.toLocaleTimeString("en-US", {
+      const timeOut = now.toLocaleTimeString("en-PH", {
         hour: "numeric",
         minute: "numeric",
         hour12: true,
@@ -466,7 +472,6 @@ const AttendanceScreen = () => {
         );
       }
 
-      // Save to backend
       const saveRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-out",
         {
@@ -486,7 +491,6 @@ const AttendanceScreen = () => {
 
       if (!saveRes.ok) throw new Error("Failed to save time-out data");
 
-      // Refresh attendance data after successful time-out
       await fetchAttendanceData(selectedOutlet);
       Alert.alert("Time Out recorded!");
     } catch (error: unknown) {
@@ -495,6 +499,8 @@ const AttendanceScreen = () => {
         "Failed to upload or save time-out.",
         error instanceof Error ? error.message : String(error)
       );
+    } finally {
+      setIsLoadingTimeOut(false);
     }
   };
 
@@ -553,7 +559,7 @@ const AttendanceScreen = () => {
 
       <TouchableOpacity
         onPress={handleTimeIn}
-        disabled={attendanceData.hasTimedIn}
+        disabled={attendanceData.hasTimedIn || isLoadingTimeIn}
         style={[
           styles.customButton,
           {
@@ -561,8 +567,13 @@ const AttendanceScreen = () => {
           },
         ]}
       >
-        <Text style={styles.buttonText}>TIME IN</Text>
+        {isLoadingTimeIn ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>TIME IN</Text>
+        )}
       </TouchableOpacity>
+
       <View style={{ alignItems: "center", marginBottom: 30 }}>
         {attendanceData.timeInSelfieUri && (
           <TouchableOpacity
@@ -590,7 +601,11 @@ const AttendanceScreen = () => {
 
       <TouchableOpacity
         onPress={handleTimeOut}
-        disabled={!attendanceData.hasTimedIn || attendanceData.hasTimedOut}
+        disabled={
+          !attendanceData.hasTimedIn ||
+          attendanceData.hasTimedOut ||
+          isLoadingTimeOut
+        }
         style={[
           styles.customButton,
           {
@@ -601,7 +616,11 @@ const AttendanceScreen = () => {
           },
         ]}
       >
-        <Text style={styles.buttonText}>TIME OUT</Text>
+        {isLoadingTimeOut ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>TIME OUT</Text>
+        )}
       </TouchableOpacity>
       <View style={{ alignItems: "center", marginBottom: 30 }}>
         {attendanceData.timeOutSelfieUri && (
@@ -701,7 +720,7 @@ const AttendanceScreen = () => {
                     const date = new Date(timestamp);
 
                     // Convert to Philippine Time (Asia/Manila) and format nicely with weekday, 12-hour time
-                    return date.toLocaleString("en-US", {
+                    return date.toLocaleString("en-PH", {
                       timeZone: "Asia/Manila",
                       weekday: "long", // e.g. Friday
                       hour: "numeric",

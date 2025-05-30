@@ -1,5 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -12,7 +14,19 @@ import {
 } from "react-native";
 import styles from "./Style";
 
+type RootStackParamList = {
+  Navigator: undefined;
+  QTTprocess: undefined;
+  QTTScreen: undefined;
+};
+
+type QTTScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "QTTprocess"
+>;
+
 const QTTScreen = () => {
+  const navigation = useNavigation<QTTScreenNavigationProp>();
   const router = useRouter();
   const [historyData, setHistoryData] = useState<any[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -139,7 +153,7 @@ const QTTScreen = () => {
 
       <TouchableOpacity
         style={styles.fabQTT}
-        onPress={() => router.replace("/QTTprocess")}
+        onPress={() => navigation.navigate("QTTprocess")}
       >
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
