@@ -5,8 +5,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
-  Button,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,6 +25,7 @@ type ExpiryEntry = {
 const Expiry = () => {
   const navigation = useNavigation();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [date, setDate] = useState("");
   const [merchandiser, setMerchandiser] = useState("");
@@ -130,6 +131,7 @@ const Expiry = () => {
 
   // New Save function to POST data to backend
   const handleSubmit = async () => {
+    setLoading(true); // Start loading
     try {
       if (!selectedOutlet) {
         Alert.alert("Validation Error", "Please select an outlet.");
@@ -177,6 +179,8 @@ const Expiry = () => {
     } catch (error) {
       console.error("Submit error:", error);
       Alert.alert("Error", "An unexpected error occurred.");
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -293,13 +297,36 @@ const Expiry = () => {
         ))}
 
         <View style={styles.buttonRowQTT}>
-          <Button title="Submit" onPress={handleSubmit} />
-          <Button title="Add" onPress={handleAddEntry} />
-          <Button
-            title="Cancel"
-            color="#d9534f"
+          <TouchableOpacity onPress={handleAddEntry} style={{ padding: 10 }}>
+            <Ionicons name="add-circle-outline" size={30} color="#007AFF" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={loading}
+            style={{
+              backgroundColor: "#007AFF",
+              padding: 10,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>Submit</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
-          />
+            style={{
+              backgroundColor: "#d9534f",
+              padding: 10,
+              borderRadius: 8,
+              alignItems: "center",
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAwareScrollView>

@@ -5,8 +5,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
-  Button,
   Text,
   TextInput,
   TouchableOpacity,
@@ -19,6 +19,7 @@ import styles from "./Style";
 const Competitors = () => {
   const navigation = useNavigation();
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
   const [date, setDate] = useState("");
   const [merchandiser, setMerchandiser] = useState("");
@@ -124,10 +125,15 @@ const Competitors = () => {
 
   // New Save function to POST data to backend
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return; // Stop submission if validation fails
+    }
+    setLoading(true);
     try {
       const userEmail = await AsyncStorage.getItem("userEmail");
       if (!userEmail) {
         Alert.alert("Error", "User email not found. Please login again.");
+        setLoading(false);
         return;
       }
 
@@ -145,7 +151,7 @@ const Competitors = () => {
         duration,
         impact,
         feedback,
-        userEmail, // Added here
+        userEmail,
       };
 
       const response = await fetch(
@@ -160,14 +166,35 @@ const Competitors = () => {
       if (response.ok) {
         Alert.alert("Success", "Competitor data saved successfully.");
         handleClear();
-        // navigation.goBack(); // or router.replace("/someRoute");
       } else {
         Alert.alert("Error", "Failed to save data.");
       }
     } catch (error) {
       console.error("Submit error:", error);
       Alert.alert("Error", "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const validateForm = () => {
+    if (
+      !selectedOutlet ||
+      store.trim() === "" ||
+      company.trim() === "" ||
+      brand.trim() === "" ||
+      !promoType ||
+      promoDetails.trim() === "" ||
+      displayLocation.trim() === "" ||
+      pricing.trim() === "" ||
+      duration.trim() === "" ||
+      impact.trim() === "" ||
+      feedback.trim() === ""
+    ) {
+      Alert.alert("Validation Error", "Please fill all required fields.");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -309,16 +336,36 @@ const Competitors = () => {
             <Ionicons name="trash-outline" size={24} color="gray" />
             <Text style={styles.iconLabel}>Clear</Text>
           </TouchableOpacity>
-
-          <Button title="Submit" onPress={handleSubmit} />
-
-          <Button
-            title="Cancel"
-            color="#d9534f"
-            onPress={() => {
-              navigation.goBack();
+          <TouchableOpacity
+            onPress={handleSubmit}
+            disabled={loading}
+            style={{
+              backgroundColor: loading ? "#999" : "#0aafeb",
+              padding: 10,
+              borderRadius: 8,
+              alignItems: "center",
+              marginVertical: 5,
             }}
-          />
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={{ color: "#fff", fontWeight: "bold" }}>Submit</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={{
+              backgroundColor: "#d9534f",
+              padding: 10,
+              borderRadius: 8,
+              alignItems: "center",
+              marginVertical: 5,
+            }}
+          >
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>Cancel</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAwareScrollView>
