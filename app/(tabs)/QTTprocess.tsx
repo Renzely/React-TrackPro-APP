@@ -19,51 +19,48 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import Ionicons from "react-native-vector-icons/Ionicons";
 import styles from "./Style";
 
-const Question = ({
-  title,
-  value,
-  onSelect,
-}: {
-  title: string;
-  value: string;
-  onSelect: (val: string) => void;
-}) => (
-  <View style={{ marginVertical: 10 }}>
-    <Text style={styles.questionQTT}>{title}</Text>
-    <View style={styles.buttonGroupQTT}>
-      <TouchableOpacity
-        style={[
-          styles.optionButtonQTT,
-          value === "Yes" && styles.selectedButtonQTTYes,
-        ]}
-        onPress={() => onSelect("Yes")}
-      >
-        <Text style={styles.optionTextQTT}>Yes</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.optionButtonQTT,
-          value === "No" && styles.selectedButtonQTTNo,
-        ]}
-        onPress={() => onSelect("No")}
-      >
-        <Text style={styles.optionTextQTT}>No</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
-
 const QTTProcess = () => {
   const navigation = useNavigation();
   const [userType, setUserType] = useState("");
   const [date, setDate] = useState("");
   const [merchandiser, setMerchandiser] = useState("");
+  const [shelfspace, setShelfspace] = useState("");
+  const [designated, setDesignated] = useState("");
   const [firstBrandSeen, setFirstBrandSeen] = useState("");
   const [complianceDOG, setComplianceDOG] = useState("");
   const [complianceCAT, setComplianceCAT] = useState("");
-  const [beforeImage, setBeforeImage] = useState<string | null>(null);
-  const [afterImage, setAfterImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [royalCaninSignage, setRoyalCaninSignage] = useState("");
+  const [visibilityCashier, setVisibilityCashier] = useState("");
+  const [endcapGondola, setEndcapGondola] = useState("");
+  const [wetProductsHighlight, setWetProductsHighlight] = useState("");
+  const [tacticalBin, setTacticalBin] = useState("");
+  const [PSRComment, setPSRComment] = useState("");
+
+  // Individual images for each question
+  const [ShelfSpaceImage, setShelfSpaceImage] = useState<string | null>(null);
+  const [DesignatedImage, setDesignatedImage] = useState<string | null>(null);
+  const [firstBrandImage, setFirstBrandImage] = useState<string | null>(null);
+  const [complianceDOGImage, setComplianceDOGImage] = useState<string | null>(
+    null
+  );
+  const [complianceCATImage, setComplianceCATImage] = useState<string | null>(
+    null
+  );
+  const [royalCaninSignageImage, setRoyalCaninSignageImage] = useState<
+    string | null
+  >(null);
+  const [visibilityCashierImage, setVisibilityCashierImage] = useState<
+    string | null
+  >(null);
+  const [endcapGondolaImage, setEndcapGondolaImage] = useState<string | null>(
+    null
+  );
+  const [wetProductsHighlightImage, setWetProductsHighlightImage] = useState<
+    string | null
+  >(null);
+  const [tacticalBinImage, setTacticalBinImage] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [open, setOpen] = useState(false);
@@ -77,6 +74,86 @@ const QTTProcess = () => {
     setPreviewImage(uri);
     setIsModalVisible(true);
   };
+
+  const Question = ({
+    title,
+    value,
+    onSelect,
+    onImageCapture,
+    capturedImage,
+    onImagePreview,
+    setCapturedImage, // <-- new prop to allow clearing the image
+  }: {
+    title: string;
+    value: string;
+    onSelect: (val: string) => void;
+    onImageCapture: () => void;
+    capturedImage: string | null;
+    onImagePreview: (uri: string) => void;
+    setCapturedImage: (val: string | null) => void; // <-- also add this to the prop type
+  }) => (
+    <View style={{ marginVertical: 10 }}>
+      <Text style={styles.questionQTT}>{title}</Text>
+      <View style={styles.buttonGroupQTT}>
+        <TouchableOpacity
+          style={[
+            styles.optionButtonQTT,
+            value === "Yes" && styles.selectedButtonQTTYes,
+          ]}
+          onPress={() => {
+            onSelect("Yes");
+            onImageCapture();
+          }}
+        >
+          <Text style={styles.optionTextQTT}>Yes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.optionButtonQTT,
+            value === "No" && styles.selectedButtonQTTNo,
+          ]}
+          onPress={() => {
+            onSelect("No");
+            setCapturedImage(null); // clear image when No is selected
+          }}
+        >
+          <Text style={styles.optionTextQTT}>No</Text>
+        </TouchableOpacity>
+      </View>
+
+      {capturedImage && (
+        <Pressable onPress={() => onImagePreview(capturedImage)}>
+          <View style={{ alignItems: "center", marginTop: 15 }}>
+            <Ionicons name="eye" size={24} color="blue" />
+          </View>
+          <Text style={{ color: "blue", textAlign: "center" }}>
+            Preview Image
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+
+  const calculateLevel = () => {
+    const images = [
+      visibilityCashierImage,
+      endcapGondolaImage,
+      wetProductsHighlightImage,
+      tacticalBinImage,
+    ];
+    const filledInputs = images.filter((img) => img).length;
+
+    if (filledInputs === 4) {
+      return "Level 2: Execution of ALL of the Menu of Royal Canin product display";
+    } else if (filledInputs === 3) {
+      return "Level 1: Execution of any of the 3 Merch Secondary Displays";
+    } else {
+      return "Execution"; // Placeholder when no level met
+    }
+  };
+
+  // In your component
+  const levelTitle = calculateLevel();
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -92,14 +169,32 @@ const QTTProcess = () => {
   }, []);
 
   useEffect(() => {
-    setBeforeImage(null);
-    setAfterImage(null);
+    // Reset all images and answers when user type changes
+    setFirstBrandImage(null);
+    setShelfSpaceImage(null);
+    setDesignatedImage(null);
+    setComplianceDOGImage(null);
+    setComplianceCATImage(null);
+    setRoyalCaninSignageImage(null);
+    setVisibilityCashierImage(null);
+    setEndcapGondolaImage(null);
+    setWetProductsHighlightImage(null);
+    setTacticalBinImage(null);
     setPreviewImage(null);
     setIsModalVisible(false);
+    setShelfspace("");
+    setDesignated("");
     setFirstBrandSeen("");
     setComplianceDOG("");
     setComplianceCAT("");
     setSelectedOutlet("");
+    setRoyalCaninSignage("");
+    setVisibilityCashier("");
+    setEndcapGondola("");
+    setWetProductsHighlight("");
+    setTacticalBin("");
+    setSelectedOutlet("");
+    setPSRComment("");
   }, [userType]);
 
   useEffect(() => {
@@ -147,24 +242,55 @@ const QTTProcess = () => {
     setDate(formattedDate);
   }, []);
 
-  const openGallery = async (type: "before" | "after") => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert("Permission required", "Please allow access to gallery.");
+  const openCamera = async (questionType: string) => {
+    const cameraPermissionResult =
+      await ImagePicker.requestCameraPermissionsAsync();
+    if (!cameraPermissionResult.granted) {
+      Alert.alert("Permission required", "Please allow access to camera.");
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
     });
 
     if (!result.canceled && result.assets?.length > 0) {
       const uri = result.assets[0].uri;
-      if (type === "before") {
-        setBeforeImage(uri);
-      } else {
-        setAfterImage(uri);
+
+      switch (questionType) {
+        case "firstBrand":
+          setFirstBrandImage(uri);
+          break;
+        case "complianceDOG":
+          setComplianceDOGImage(uri);
+          break;
+        case "complianceCAT":
+          setComplianceCATImage(uri);
+          break;
+        case "royalCaninSignage":
+          setRoyalCaninSignageImage(uri);
+          break;
+        case "visibilityCashier":
+          setVisibilityCashierImage(uri);
+          break;
+        case "endcapGondola":
+          setEndcapGondolaImage(uri);
+          break;
+        case "wetProductsHighlight":
+          setWetProductsHighlightImage(uri);
+          break;
+        case "tacticalBin":
+          setTacticalBinImage(uri);
+          break;
+        case "shelfspace":
+          setShelfSpaceImage(uri);
+          break;
+        case "designated":
+          setDesignatedImage(uri);
+          break;
+        default:
       }
     }
   };
@@ -217,58 +343,194 @@ const QTTProcess = () => {
   };
 
   const handleSubmit = async () => {
-    setLoading(true); // start loading
+    setLoading(true);
     try {
       const userEmail = await AsyncStorage.getItem("userEmail");
       if (!userEmail) {
         Alert.alert("Error", "User email not found. Please login again.");
-        return;
-      }
-
-      // Validate image selection
-      if (!beforeImage || !afterImage) {
-        Alert.alert(
-          "Missing Image",
-          "Please select both before and after images."
-        );
+        setLoading(false);
         return;
       }
 
       // Validate outlet
       if (!selectedOutlet) {
-        console.log("Selected outlet:", selectedOutlet);
-        Alert.alert("Missing Fields", "Please Select Outlet.");
+        Alert.alert("Missing Outlet", "Please Select Outlet.");
         return;
       }
 
-      // Validate required fields for PSR
+      if (!PSRComment) {
+        Alert.alert("Missing Comment", "Please Comment Feedback.");
+        return;
+      }
+
+      // Validate required fields and images for PSR
       if (userType === "PSR") {
-        if (!firstBrandSeen || !complianceDOG || !complianceCAT) {
+        if (
+          !firstBrandSeen ||
+          !complianceDOG ||
+          !complianceCAT ||
+          !royalCaninSignage ||
+          !visibilityCashier ||
+          !endcapGondola ||
+          !wetProductsHighlight ||
+          !tacticalBin
+        ) {
           Alert.alert(
             "Incomplete PSR Input",
             "Please answer all required PSR questions."
           );
           return;
         }
+        if (royalCaninSignage === "Yes" && !royalCaninSignageImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Royal Canin Outside Signage' question."
+          );
+          return;
+        }
+
+        // Check if images are required for "Yes" answers
+        if (firstBrandSeen === "Yes" && !firstBrandImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'First brand seen' question."
+          );
+          return;
+        }
+
+        if (complianceDOG === "Yes" && !complianceDOGImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Compliance with DOG planogram' question."
+          );
+          return;
+        }
+        if (complianceCAT === "Yes" && !complianceCATImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Compliance with CAT planogram' question."
+          );
+          return;
+        }
+        if (visibilityCashier === "Yes" && !visibilityCashierImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Royal Canin Outside Signage' question."
+          );
+          return;
+        }
+        if (endcapGondola === "Yes" && !endcapGondolaImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Royal Canin Outside Signage' question."
+          );
+          return;
+        }
+        if (wetProductsHighlight === "Yes" && !wetProductsHighlightImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Royal Canin Outside Signage' question."
+          );
+          return;
+        }
+        if (tacticalBin === "Yes" && !tacticalBinImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Royal Canin Outside Signage' question."
+          );
+          return;
+        }
       }
 
-      // Validate required fields for VET
+      // Validate required fields and images for VET
       if (userType === "VET") {
-        if (!firstBrandSeen || !complianceDOG) {
+        if (!shelfspace || !designated) {
           Alert.alert(
             "Incomplete VET Input",
             "Please answer all required VET questions."
           );
           return;
         }
+        // Check if images are required for "Yes" answers
+        if (shelfspace === "Yes" && !ShelfSpaceImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for '80% Shelf Space' question."
+          );
+          return;
+        }
+        if (designated === "Yes" && !DesignatedImage) {
+          Alert.alert(
+            "Missing Image",
+            "Please take a photo for 'Designated Rack' question."
+          );
+          return;
+        }
       }
 
-      // Upload images to S3
-      const beforeKey = await uploadToS3(
-        beforeImage,
-        `before_${Date.now()}.jpg`
-      );
-      const afterKey = await uploadToS3(afterImage, `after_${Date.now()}.jpg`);
+      // Upload images to S3 (only if they exist)
+      const imageKeys: any = {};
+
+      if (firstBrandImage) {
+        imageKeys.firstBrandKey = await uploadToS3(
+          firstBrandImage,
+          `firstBrand_${Date.now()}.jpg`
+        );
+      }
+      if (complianceDOGImage) {
+        imageKeys.complianceDOGKey = await uploadToS3(
+          complianceDOGImage,
+          `complianceDOG_${Date.now()}.jpg`
+        );
+      }
+      if (complianceCATImage) {
+        imageKeys.complianceCATKey = await uploadToS3(
+          complianceCATImage,
+          `complianceCAT_${Date.now()}.jpg`
+        );
+      }
+      if (royalCaninSignageImage) {
+        imageKeys.royalCaninSignageKey = await uploadToS3(
+          royalCaninSignageImage,
+          `royalCaninSignage_${Date.now()}.jpg`
+        );
+      }
+      if (visibilityCashierImage) {
+        imageKeys.visibilityCashierKey = await uploadToS3(
+          visibilityCashierImage,
+          `visibilityCashier_${Date.now()}.jpg`
+        );
+      }
+      if (endcapGondolaImage) {
+        imageKeys.endcapGondolaKey = await uploadToS3(
+          endcapGondolaImage,
+          `endcapGondola${Date.now()}.jpg`
+        );
+      }
+      if (wetProductsHighlightImage) {
+        imageKeys.wetProductsHighlightKey = await uploadToS3(
+          wetProductsHighlightImage,
+          `wetProductsHighlight${Date.now()}.jpg`
+        );
+      }
+      if (tacticalBinImage) {
+        imageKeys.tacticalBinKey = await uploadToS3(
+          tacticalBinImage,
+          `tacticalBin${Date.now()}.jpg`
+        );
+      }
+      if (ShelfSpaceImage) {
+        imageKeys.ShelfSpaceKey = await uploadToS3(
+          ShelfSpaceImage,
+          `shelfspace${Date.now()}.jpg`
+        );
+      }
+      if (DesignatedImage) {
+        imageKeys.DesignatedKey = await uploadToS3(
+          DesignatedImage,
+          `designated${Date.now()}.jpg`
+        );
+      }
 
       // Prepare payload
       const payload: any = {
@@ -276,18 +538,23 @@ const QTTProcess = () => {
         date,
         merchandiser,
         outlet: selectedOutlet,
-        beforeImageKey: beforeKey,
-        afterImageKey: afterKey,
         userEmail,
+        ...imageKeys,
       };
 
       if (userType === "PSR") {
         payload.firstBrandSeen = firstBrandSeen;
         payload.complianceDOG = complianceDOG;
         payload.complianceCAT = complianceCAT;
+        payload.royalCaninSignage = royalCaninSignage;
+        payload.visibilityCashier = visibilityCashier;
+        payload.endcapGondola = endcapGondola;
+        payload.wetProductsHighlight = wetProductsHighlight;
+        payload.tacticalBin = tacticalBin;
+        payload.PSRComment = PSRComment;
       } else if (userType === "VET") {
-        payload.shelfSpace = firstBrandSeen;
-        payload.designatedRack = complianceDOG;
+        payload.shelfSpace = shelfspace;
+        payload.designatedRack = designated;
       }
 
       // Submit to backend
@@ -313,19 +580,36 @@ const QTTProcess = () => {
       console.error("QTT Submit Error:", err);
       Alert.alert("Error", "Failed to submit QTT. Please try again.");
     } finally {
-      setLoading(false); // end loading
+      setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setBeforeImage(null);
-    setAfterImage(null);
+  const ClearData = () => {
+    setFirstBrandImage(null);
+    setShelfSpaceImage(null);
+    setDesignatedImage(null);
+    setComplianceDOGImage(null);
+    setComplianceCATImage(null);
+    setRoyalCaninSignageImage(null);
+    setVisibilityCashierImage(null);
+    setEndcapGondolaImage(null);
+    setWetProductsHighlightImage(null);
+    setTacticalBinImage(null);
     setPreviewImage(null);
     setIsModalVisible(false);
+    setShelfspace("");
+    setDesignated("");
     setFirstBrandSeen("");
     setComplianceDOG("");
     setComplianceCAT("");
-    setOutlet("");
+    setSelectedOutlet("");
+    setRoyalCaninSignage("");
+    setVisibilityCashier("");
+    setEndcapGondola("");
+    setWetProductsHighlight("");
+    setTacticalBin("");
+    setPSRComment("");
+    setSelectedOutlet("");
   };
 
   return (
@@ -398,42 +682,99 @@ const QTTProcess = () => {
                 listMode="SCROLLVIEW"
               />
             </View>
-            <TouchableOpacity
-              style={styles.gallerybutton}
-              onPress={() => openGallery("before")}
-            >
-              <Text style={{ color: "#fff", fontSize: 16 }}>
-                Access Gallery (Before)
-              </Text>
-            </TouchableOpacity>
-
-            {beforeImage && (
-              <Pressable onPress={() => openImagePreview(beforeImage)}>
-                <View style={{ alignItems: "center", marginTop: 15 }}>
-                  <Ionicons name="eye" size={24} color="blue" />
-                </View>
-                <Text style={{ color: "blue", textAlign: "center" }}>
-                  Preview (Before)
-                </Text>
-              </Pressable>
-            )}
 
             {userType === "PSR" && (
               <>
                 <Question
-                  title="First brand seen inside with main shelf and headers."
+                  title="Royal Canin Outside Signage"
+                  value={royalCaninSignage}
+                  onSelect={setRoyalCaninSignage}
+                  onImageCapture={() => openCamera("royalCaninSignage")}
+                  capturedImage={royalCaninSignageImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setRoyalCaninSignageImage}
+                />
+                <Question
+                  title="Dedicated rack for Royal Canin products, first brand seen"
                   value={firstBrandSeen}
                   onSelect={setFirstBrandSeen}
+                  onImageCapture={() => openCamera("firstBrand")}
+                  capturedImage={firstBrandImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setFirstBrandImage}
                 />
                 <Question
                   title="Compliance with DOG planogram."
                   value={complianceDOG}
                   onSelect={setComplianceDOG}
+                  onImageCapture={() => openCamera("complianceDOG")}
+                  capturedImage={complianceDOGImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setComplianceDOGImage}
                 />
                 <Question
                   title="Compliance with CAT planogram."
                   value={complianceCAT}
                   onSelect={setComplianceCAT}
+                  onImageCapture={() => openCamera("complianceCAT")}
+                  capturedImage={complianceCATImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setComplianceCATImage}
+                />
+
+                <View style={styles.executionContainer}>
+                  <Text style={styles.executionTitle}>{levelTitle}</Text>
+                </View>
+
+                <Question
+                  title="Visibility in cashier"
+                  value={visibilityCashier}
+                  onSelect={setVisibilityCashier}
+                  onImageCapture={() => openCamera("visibilityCashier")}
+                  capturedImage={visibilityCashierImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setVisibilityCashierImage}
+                />
+                <Question
+                  title="Endcap/Gondola"
+                  value={endcapGondola}
+                  onSelect={setEndcapGondola}
+                  onImageCapture={() => openCamera("endcapGondola")}
+                  capturedImage={endcapGondolaImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setEndcapGondolaImage}
+                />
+                <Question
+                  title="Highlight of wet products (using wet hanger placement OR side by side to dry)"
+                  value={wetProductsHighlight}
+                  onSelect={setWetProductsHighlight}
+                  onImageCapture={() => openCamera("wetProductsHighlight")}
+                  capturedImage={wetProductsHighlightImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setWetProductsHighlightImage}
+                />
+                <Question
+                  title="Tactical bin"
+                  value={tacticalBin}
+                  onSelect={setTacticalBin}
+                  onImageCapture={() => openCamera("tacticalBin")}
+                  capturedImage={tacticalBinImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setTacticalBinImage}
+                />
+                <Text style={styles.labelQTT}>Feedback</Text>
+                <TextInput
+                  placeholder="Enter your comment for feedback"
+                  placeholderTextColor="#222021"
+                  value={PSRComment} // You'll need to define this in your state
+                  onChangeText={setPSRComment} // And this setter too
+                  style={{
+                    borderWidth: 1,
+                    borderColor: "#ccc",
+                    borderRadius: 4,
+                    padding: 12,
+                    marginTop: 12,
+                  }}
                 />
               </>
             )}
@@ -442,35 +783,23 @@ const QTTProcess = () => {
               <>
                 <Question
                   title="80% Shelf Space."
-                  value={firstBrandSeen}
-                  onSelect={setFirstBrandSeen}
+                  value={shelfspace}
+                  onSelect={setShelfspace}
+                  onImageCapture={() => openCamera("shelfspace")}
+                  capturedImage={ShelfSpaceImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setShelfSpaceImage}
                 />
                 <Question
                   title="Designated Rack."
-                  value={complianceDOG}
-                  onSelect={setComplianceDOG}
+                  value={designated}
+                  onSelect={setDesignated}
+                  onImageCapture={() => openCamera("designated")}
+                  capturedImage={DesignatedImage}
+                  onImagePreview={openImagePreview}
+                  setCapturedImage={setDesignatedImage}
                 />
               </>
-            )}
-
-            <TouchableOpacity
-              style={styles.gallerybutton}
-              onPress={() => openGallery("after")}
-            >
-              <Text style={{ color: "#fff", fontSize: 16 }}>
-                Access Gallery (After)
-              </Text>
-            </TouchableOpacity>
-
-            {afterImage && (
-              <Pressable onPress={() => openImagePreview(afterImage)}>
-                <View style={{ alignItems: "center", marginTop: 15 }}>
-                  <Ionicons name="eye" size={24} color="blue" />
-                </View>
-                <Text style={{ color: "blue", textAlign: "center" }}>
-                  Preview (After)
-                </Text>
-              </Pressable>
             )}
 
             <Modal visible={isModalVisible} transparent={true}>
@@ -499,10 +828,7 @@ const QTTProcess = () => {
             </Modal>
 
             <View style={styles.buttonRowQTT}>
-              <TouchableOpacity
-                onPress={handleCancel}
-                style={styles.iconButton}
-              >
+              <TouchableOpacity onPress={ClearData} style={styles.iconButton}>
                 <Ionicons name="trash-outline" size={24} color="gray" />
                 <Text style={styles.iconLabel}>Clear</Text>
               </TouchableOpacity>
@@ -511,7 +837,7 @@ const QTTProcess = () => {
                 onPress={handleSubmit}
                 disabled={loading}
                 style={{
-                  backgroundColor: "#007AFF",
+                  backgroundColor: loading ? "#999" : "#0aafeb",
                   padding: 10,
                   borderRadius: 8,
                   alignItems: "center",

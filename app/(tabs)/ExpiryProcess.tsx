@@ -282,6 +282,7 @@ const Expiry = () => {
               value={entry.sku}
               onChangeText={(text) => handleChangeEntry(index, "sku", text)}
               placeholder="Enter SKU"
+              placeholderTextColor="#222021"
             />
 
             <Text style={styles.labelQTT}>Expiration</Text>
@@ -292,6 +293,7 @@ const Expiry = () => {
                 handleChangeEntry(index, "expiration", text)
               }
               placeholder="Enter Expiration Date"
+              placeholderTextColor="#222021"
             />
           </View>
         ))}
