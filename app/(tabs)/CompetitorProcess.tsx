@@ -249,6 +249,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={store}
           onChangeText={setStore}
+          placeholder="Enter Store"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Company</Text>
@@ -256,6 +258,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={company}
           onChangeText={setCompany}
+          placeholder="Enter Company"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Brand</Text>
@@ -263,6 +267,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={brand}
           onChangeText={setBrand}
+          placeholder="Enter Brand"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Promotional Type</Text>
@@ -294,6 +300,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={promoDetails}
           onChangeText={setPromoDetails}
+          placeholder="Enter Promotional"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Display Location</Text>
@@ -301,6 +309,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={displayLocation}
           onChangeText={setDisplayLocation}
+          placeholder="Enter Display Location"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Pricing</Text>
@@ -308,6 +318,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={pricing}
           onChangeText={setPricing}
+          placeholder="Enter Pricing"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Duration of Promo</Text>
@@ -315,6 +327,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={duration}
           onChangeText={setDuration}
+          placeholder="Enter Duration of Promo"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Impact to our Product</Text>
@@ -322,6 +336,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={impact}
           onChangeText={setImpact}
+          placeholder="Enter Impact to our Product"
+          placeholderTextColor="#222021"
         />
 
         <Text style={styles.labelQTT}>Customer Feedback</Text>
@@ -329,6 +345,8 @@ const Competitors = () => {
           style={styles.pickerWrapperQTT}
           value={feedback}
           onChangeText={setFeedback}
+          placeholder="Enter Feedback"
+          placeholderTextColor="#222021"
         />
 
         <View style={styles.buttonRowQTT}>

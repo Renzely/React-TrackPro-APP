@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -25,57 +25,101 @@ type QTTScreenNavigationProp = NativeStackNavigationProp<
   "QTTprocess"
 >;
 
+type QTTData = {
+  _id: string;
+  userType: "PSR" | "VET";
+  date: string;
+  userEmail: string;
+  merchandiser: string;
+  outlet: string;
+
+  // Optional images
+  firstBrandImage?: string;
+  complianceDOGImage?: string;
+  complianceCATImage?: string;
+  royalCaninSignageImage?: string;
+  visibilityCashierImage?: string;
+  endcapGondolaImage?: string;
+  wetProductsHighlightImage?: string;
+  tacticalBinImage?: string;
+  shelfSpaceImage?: string;
+  designatedRackImage?: string;
+
+  // For PSR
+  firstBrandSeen?: string;
+  complianceDOG?: string;
+  complianceCAT?: string;
+  royalCaninSignage?: string;
+  visibilityCashier?: string;
+  endcapGondola?: string;
+  wetProductsHighlight?: string;
+  tacticalBin?: string;
+  PSRComment?: string;
+
+  // For VET
+  shelfSpace?: string;
+  designatedRack?: string;
+};
+
 const QTTScreen = () => {
   const navigation = useNavigation<QTTScreenNavigationProp>();
   const router = useRouter();
-  const [historyData, setHistoryData] = useState<any[]>([]);
+  const isFocused = useIsFocused();
+
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<QTTData[]>([]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch user email when component mounts
   useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const email = await AsyncStorage.getItem("userEmail"); // <-- correct key here
-        if (!email) {
-          Alert.alert("Error", "User email not found. Please login again.");
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(
-          `https://react-rc-ugc-v2-backend.onrender.com/QTThistory?email=${encodeURIComponent(
-            email
-          )}`
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch history");
-        }
-
-        const data = await response.json();
-        setHistoryData(data);
-      } catch (error) {
-        console.error("Error fetching QTT history:", error);
-        Alert.alert("Error", "Failed to load history data.");
-      } finally {
-        setLoading(false);
-      }
+    const getUserEmail = async () => {
+      const email = await AsyncStorage.getItem("userEmail");
+      setUserEmail(email);
     };
-
-    fetchHistory();
+    getUserEmail();
   }, []);
 
+  // Fetch QTT data when email or screen focus changes
+  useEffect(() => {
+    if (userEmail && isFocused) {
+      fetchQTTHistory(userEmail);
+    }
+  }, [userEmail, isFocused]);
+
+  const fetchQTTHistory = async (email: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `https://react-rc-ugc-v2-backend.onrender.com/QTThistory?email=${encodeURIComponent(
+          email
+        )}`
+      );
+      if (!response.ok) throw new Error("Failed to fetch QTT data");
+
+      const data = await response.json();
+      setHistoryData(data);
+    } catch (error) {
+      console.error("Error fetching QTT history:", error);
+      setHistoryData([]);
+      Alert.alert("Error", "Failed to load history data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const toggleExpand = (index: number) => {
-    setExpandedIndex(index === expandedIndex ? null : index);
+    setExpandedIndex(expandedIndex === index ? null : index);
   };
 
   if (loading) {
     return (
       <View
-        style={[
-          styles.pageContainer,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
       >
         <Text>Loading history...</Text>
       </View>
@@ -102,46 +146,147 @@ const QTTScreen = () => {
                 <Text style={styles.cardTitle}>
                   {item.outlet || "No Outlet"}
                 </Text>
-                <Text style={styles.cardDate}>
-                  {new Date(item.date).toDateString()}
-                </Text>
               </View>
+              <Text style={styles.cardDate}>
+                {new Date(item.date).toDateString()}
+              </Text>
 
               {expandedIndex === index && (
                 <View style={styles.cardContent}>
-                  <Text>Merchandiser: {item.merchandiser}</Text>
-                  <Text>User Type: {item.userType}</Text>
+                  <Text>Merchandiser: {item.merchandiser || "N/A"}</Text>
+                  <Text>User Type: {item.userType || "N/A"}</Text>
 
                   {item.userType === "PSR" ? (
                     <>
-                      <Text>First Brand Seen: {item.firstBrandSeen}</Text>
-                      <Text>Compliance DOG: {item.complianceDOG}</Text>
-                      <Text>Compliance CAT: {item.complianceCAT}</Text>
+                      <Text style={{ marginTop: 8 }}>
+                        Royal Canin Signage: {item.royalCaninSignage || "N/A"}
+                      </Text>
+                      {item.royalCaninSignageImage && (
+                        <>
+                          <Text>Royal Canin Signage Image:</Text>
+                          <Image
+                            source={{ uri: item.royalCaninSignageImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 8 }}>
+                        First Brand Seen: {item.firstBrandSeen || "N/A"}
+                      </Text>
+                      {item.firstBrandImage && (
+                        <>
+                          <Text>First Brand Image:</Text>
+                          <Image
+                            source={{ uri: item.firstBrandImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 8 }}>
+                        Compliance DOG: {item.complianceDOG || "N/A"}
+                      </Text>
+                      {item.complianceDOGImage && (
+                        <>
+                          <Text>Compliance DOG Image:</Text>
+                          <Image
+                            source={{ uri: item.complianceDOGImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 8 }}>
+                        Compliance CAT: {item.complianceCAT || "N/A"}
+                      </Text>
+                      {item.complianceCATImage && (
+                        <>
+                          <Text>Compliance CAT Image:</Text>
+                          <Image
+                            source={{ uri: item.complianceCATImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+
+                      <Text style={{ marginTop: 8 }}>
+                        Visibility Cashier: {item.visibilityCashier || "N/A"}
+                      </Text>
+                      {item.visibilityCashierImage && (
+                        <>
+                          <Text>Visibility Cashier Image:</Text>
+                          <Image
+                            source={{ uri: item.visibilityCashierImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+
+                      <Text style={{ marginTop: 8 }}>
+                        Endcap Gondola: {item.endcapGondola || "N/A"}
+                      </Text>
+
+                      {item.endcapGondolaImage && (
+                        <>
+                          <Text>Endcap Gondola Image:</Text>
+                          <Image
+                            source={{ uri: item.endcapGondolaImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 8 }}>
+                        Wet Products Highlight:{" "}
+                        {item.wetProductsHighlight || "N/A"}
+                      </Text>
+                      {item.wetProductsHighlightImage && (
+                        <>
+                          <Text>Wet Products Highlight Image:</Text>
+                          <Image
+                            source={{ uri: item.wetProductsHighlightImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 8 }}>
+                        Tactical Bin: {item.tacticalBin || "N/A"}
+                      </Text>
+
+                      {item.tacticalBinImage && (
+                        <>
+                          <Text>Tactical Bin Image:</Text>
+                          <Image
+                            source={{ uri: item.tacticalBinImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text style={{ marginTop: 11 }}>
+                        PSR Comment: {item.PSRComment || "No comment"}
+                      </Text>
                     </>
                   ) : (
                     <>
-                      <Text>Shelf Space: {item.shelfSpace}</Text>
-                      <Text>Designated Rack: {item.designatedRack}</Text>
-                    </>
-                  )}
-
-                  {item.beforeImage && (
-                    <>
-                      <Text style={{ marginTop: 8 }}>Before Image:</Text>
-                      <Image
-                        source={{ uri: item.beforeImage }}
-                        style={styles.image}
-                      />
-                    </>
-                  )}
-
-                  {item.afterImage && (
-                    <>
-                      <Text>After Image:</Text>
-                      <Image
-                        source={{ uri: item.afterImage }}
-                        style={styles.image}
-                      />
+                      <Text>Shelf Space: {item.shelfSpace || "N/A"}</Text>
+                      {item.shelfSpaceImage && (
+                        <>
+                          <Text>Shelf Space Image:</Text>
+                          <Image
+                            source={{ uri: item.shelfSpaceImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
+                      <Text>
+                        Designated Rack: {item.designatedRack || "N/A"}
+                      </Text>
+                      {item.designatedRackImage && (
+                        <>
+                          <Text>Designated Rack Image:</Text>
+                          <Image
+                            source={{ uri: item.designatedRackImage }}
+                            style={styles.image}
+                          />
+                        </>
+                      )}
                     </>
                   )}
                 </View>

@@ -108,10 +108,10 @@ const ExpiryScreen = () => {
                 <Text style={styles.cardTitle}>
                   {item.outlet || "No Outlet"}
                 </Text>
-                <Text style={styles.cardDate}>
-                  {new Date(item.date).toDateString()}
-                </Text>
               </View>
+              <Text style={styles.cardDate}>
+                {new Date(item.date).toDateString()}
+              </Text>
 
               {expandedIndex === index && (
                 <View style={styles.cardContent}>

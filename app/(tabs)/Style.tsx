@@ -1,5 +1,4 @@
-import { StyleSheet } from "react-native";
-import { Platform } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 //LOGIN SCREEN DESIGN
 
@@ -368,7 +367,7 @@ const loginStyles = StyleSheet.create({
   },
   cardDate: {
     fontSize: 14,
-    color: "#888",
+    color: "#222021",
   },
   cardContent: {
     marginTop: 12,
@@ -424,6 +423,7 @@ const loginStyles = StyleSheet.create({
 
   questionQTT: {
     fontWeight: "600",
+    fontSize: 11,
     marginBottom: 5,
     alignSelf: "center",
   },
@@ -684,6 +684,15 @@ const loginStyles = StyleSheet.create({
     alignItems: "center",
     marginTop: 15,
     width: "100%",
+  },
+  executionContainer: {
+    alignItems: "center",
+    marginVertical: 10, // Adds some vertical spacing
+  },
+  executionTitle: {
+    fontSize: 12, // Adjust font size as needed
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
 
