@@ -93,7 +93,7 @@ const ExpiryScreen = () => {
       </View>
       <ScrollView contentContainerStyle={styles.containerQTTHistory}>
         {loading ? (
-          <ActivityIndicator size="large" color="#4caf50" />
+          <ActivityIndicator size="large" color="#0aafeb" />
         ) : expiryData.length === 0 ? (
           <Text style={styles.noHistoryText}>No history found.</Text>
         ) : (

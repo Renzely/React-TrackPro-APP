@@ -510,8 +510,6 @@ const AttendanceScreen = () => {
         <Text style={styles.appBarTitleAttendance}>ATTENDANCE</Text>
       </View>
 
-      {loading && <ActivityIndicator size="large" color="#0aafeb" />}
-
       {/* DATE & TIME */}
       <View style={{ alignItems: "center", marginBottom: 30 }}>
         <Text style={{ fontSize: 22, fontWeight: "500", color: "#333" }}>
@@ -616,6 +614,8 @@ const AttendanceScreen = () => {
           },
         ]}
       >
+        {loading && <ActivityIndicator size="large" color="#0aafeb" />}
+
         {isLoadingTimeOut ? (
           <ActivityIndicator color="#fff" />
         ) : (
