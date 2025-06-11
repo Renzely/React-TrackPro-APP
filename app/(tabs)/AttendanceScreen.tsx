@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -39,6 +40,9 @@ const AttendanceScreen = () => {
   const [currentDate, setCurrentDate] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedOutlet, setSelectedOutlet] = useState("");
+  const [otherOutletName, setOtherOutletName] = useState("");
+  const isOtherNameEditable = otherOutletName === "";
+
   const [outletOptions, setOutletOptions] = useState([
     { label: "Select Branch", value: "" },
   ]);
@@ -207,18 +211,58 @@ const AttendanceScreen = () => {
 
         if (response.ok) {
           const outlets = await response.json();
-          const options = outlets.map((outlet: string) => ({
-            label: outlet,
-            value: outlet,
-          }));
+
+          // Process outlets for dropdown
+          const dropdownOptions: { label: string; value: string }[] = [];
+          let otherOutletDescription = "";
+
+          outlets.forEach((outlet: string) => {
+            if (outlet.startsWith("Others:")) {
+              // Found a custom "Others" outlet
+              dropdownOptions.push({ label: "Others", value: "Others" });
+
+              // Extract the description after "Others:"
+              const descriptionMatch = outlet.match(
+                /Others:\s*["']?([^"']+)["']?/
+              );
+              if (descriptionMatch) {
+                otherOutletDescription = descriptionMatch[1];
+              }
+            } else {
+              dropdownOptions.push({ label: outlet, value: outlet });
+            }
+          });
+
+          // Remove duplicate "Others"
+          const seen = new Set();
+          const uniqueOptions = dropdownOptions.filter((item) => {
+            if (seen.has(item.value)) return false;
+            seen.add(item.value);
+            return true;
+          });
+
+          // Final dropdown options
+          const finalOptions = [
+            { label: "Select Branch", value: "" },
+            ...uniqueOptions,
+          ];
+          setOutletOptions(finalOptions);
 
           // Load saved outlet
           const savedOutlet = await AsyncStorage.getItem("outlet");
-
-          setOutletOptions([{ label: "Select Branch", value: "" }, ...options]);
+          const savedOtherOutletName = await AsyncStorage.getItem(
+            "otherOutletName"
+          );
 
           if (savedOutlet) {
-            setSelectedOutlet(savedOutlet);
+            if (savedOutlet.startsWith("Others:")) {
+              setSelectedOutlet("Others");
+              if (savedOtherOutletName) {
+                setOtherOutletName(savedOtherOutletName);
+              }
+            } else {
+              setSelectedOutlet(savedOutlet);
+            }
           }
         } else {
           console.error("Failed to fetch outlets:", await response.text());
@@ -230,6 +274,24 @@ const AttendanceScreen = () => {
 
     loadOutlets();
   }, []);
+
+  useEffect(() => {
+    const restoreOtherOutletName = async () => {
+      if (selectedOutlet === "Others") {
+        const savedOtherOutletName = await AsyncStorage.getItem(
+          "otherOutletName"
+        );
+        if (savedOtherOutletName) {
+          setOtherOutletName(savedOtherOutletName);
+        }
+      } else if (selectedOutlet && selectedOutlet !== "") {
+        // Clear other outlet name when selecting non-Others options
+        setOtherOutletName("");
+      }
+    };
+
+    restoreOtherOutletName();
+  }, [selectedOutlet]);
 
   const fetchEmail = async () => {
     try {
@@ -368,7 +430,10 @@ const AttendanceScreen = () => {
           location.longitude
         );
       }
-
+      const outletToSave =
+        selectedOutlet === "Others"
+          ? `Others: "${otherOutletName}"`
+          : selectedOutlet;
       const saveRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-in",
         {
@@ -377,7 +442,7 @@ const AttendanceScreen = () => {
           body: JSON.stringify({
             email,
             date,
-            outlet: selectedOutlet,
+            outlet: outletToSave,
             timeIn,
             selfieUrl,
             location,
@@ -471,7 +536,10 @@ const AttendanceScreen = () => {
           location.longitude
         );
       }
-
+      const outletToSave =
+        selectedOutlet === "Others"
+          ? `Others: "${otherOutletName}"`
+          : selectedOutlet;
       const saveRes = await fetch(
         "https://react-rc-ugc-v2-backend.onrender.com/attendance/time-out",
         {
@@ -480,7 +548,7 @@ const AttendanceScreen = () => {
           body: JSON.stringify({
             email,
             date,
-            outlet: selectedOutlet,
+            outlet: outletToSave,
             timeOut,
             timeOutSelfieUrl,
             location,
@@ -505,7 +573,7 @@ const AttendanceScreen = () => {
   };
 
   return (
-    <View style={styles.safeArea}>
+    <ScrollView style={styles.safeArea}>
       <View style={styles.appBarAttendance}>
         <Text style={styles.appBarTitleAttendance}>ATTENDANCE</Text>
       </View>
@@ -539,10 +607,13 @@ const AttendanceScreen = () => {
         placeholder="Select Branch"
         disabled={attendanceData.hasTimedIn && !attendanceData.hasTimedOut}
         onChangeValue={(value) => {
-          if (value) {
+          if (value === "Others") {
+            setOtherOutletName("");
+          } else if (value !== null) {
             AsyncStorage.setItem("outlet", value);
           }
         }}
+        listMode="SCROLLVIEW"
         style={{
           marginBottom: 30,
           borderRadius: 10,
@@ -551,6 +622,28 @@ const AttendanceScreen = () => {
         }}
         dropDownContainerStyle={{ borderRadius: 10, width: "100%" }}
       />
+
+      {selectedOutlet === "Others" && (
+        <TextInput
+          placeholder="Enter branch name"
+          value={otherOutletName}
+          editable={!attendanceData.hasTimedIn} // Only disables after Time In
+          onChangeText={(text) => {
+            setOtherOutletName(text);
+            AsyncStorage.setItem("outlet", `Others: "${text}"`);
+            AsyncStorage.setItem("otherOutletName", text);
+          }}
+          style={{
+            borderWidth: 1,
+            borderColor: "#ccc",
+            borderRadius: 10,
+            padding: 10,
+            marginBottom: 30,
+            width: "100%",
+            backgroundColor: !attendanceData.hasTimedIn ? "#fff" : "#f0f0f0",
+          }}
+        />
+      )}
 
       {/* TIME IN SECTION */}
       <Text style={styles.sectionLabel}>TIME IN</Text>
@@ -803,7 +896,7 @@ const AttendanceScreen = () => {
           </ScrollView>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 };
 
