@@ -626,6 +626,7 @@ const AttendanceScreen = () => {
       {selectedOutlet === "Others" && (
         <TextInput
           placeholder="Enter branch name"
+          placeholderTextColor={"black"}
           value={otherOutletName}
           editable={!attendanceData.hasTimedIn} // Only disables after Time In
           onChangeText={(text) => {
@@ -634,6 +635,7 @@ const AttendanceScreen = () => {
             AsyncStorage.setItem("otherOutletName", text);
           }}
           style={{
+            color: "black",
             borderWidth: 1,
             borderColor: "#ccc",
             borderRadius: 10,
