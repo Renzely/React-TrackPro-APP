@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "BMP TrackPro",
-    "slug": "RC_UGC",
-    "version": "1.0.0",
+    "name": "TrackPro",
+    "slug": "trackpro",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/TrackPro-logo-notxt1.png",
     "scheme": "towi",
@@ -17,7 +17,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.bmp.RC_UGC"
+      "package": "com.bmp.trackpro",
+      "versionCode": 14
     },
     "web": {
       "bundler": "metro",
@@ -39,12 +40,12 @@
     "experiments": {
       "typedRoutes": true
     },
+    "owner": "harold16",
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4560472e-02fc-4bfd-9276-1b0e76e706d1"
+        "projectId": "0c71b1ef-deb0-49b3-89f9-01c64bdafec8"
       }
-    },
-    "owner": "harold16"
+    }
   }
 }

@@ -1,28 +1,48 @@
 // context/AuthContext.tsx
-import React, { useContext, createContext, useState, ReactNode } from "react";
-import { JSX } from "react/jsx-runtime";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
+import { JSX } from "react/jsx-runtime";
 
-// Define the shape of the context
 interface AuthContextType {
   userToken: string | null;
+  isLoading: boolean; // ← add this so AuthGuard can wait
   signIn: (token: string) => void;
   signOut: () => void;
 }
 
-// Create the context with a default value (undefined until wrapped in a provider)
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Define the props for the provider
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({
-  children,
-  initialToken = null,
-}: AuthProviderProps & { initialToken?: string | null }): JSX.Element => {
-  const [userToken, setUserToken] = useState<string | null>(initialToken);
+export const AuthProvider = ({ children }: AuthProviderProps): JSX.Element => {
+  const [userToken, setUserToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // ← start true, wait for AsyncStorage
+
+  // ── On mount: restore token from AsyncStorage ────────────────────────────
+  // Without this, every app resume starts with userToken = null
+  // which causes AuthGuard to briefly see "no token" and remount screens
+  useEffect(() => {
+    const restoreToken = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        if (token) setUserToken(token);
+      } catch (error) {
+        console.error("Failed to restore token", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    restoreToken();
+  }, []);
+  // ─────────────────────────────────────────────────────────────────────────
 
   const signIn = async (token: string): Promise<void> => {
     try {
@@ -43,13 +63,12 @@ export const AuthProvider = ({
   };
 
   return (
-    <AuthContext.Provider value={{ userToken, signIn, signOut }}>
+    <AuthContext.Provider value={{ userToken, isLoading, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// Custom hook to use the context
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
