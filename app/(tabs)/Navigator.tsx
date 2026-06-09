@@ -4,10 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, SafeAreaView, View } from "react-native";
 import AttendanceScreen from "./AttendanceScreen";
-import CompetitorsScreen from "./CompetitorsScreen";
-import ExpiryScreen from "./ExpiryScreen";
 import ProfileScreen from "./ProfileScreen";
-import QTTScreen from "./QTTScreen";
 import { AuthGuard } from "./auth-guard";
 
 const Tab = createBottomTabNavigator();
@@ -53,15 +50,6 @@ const Screens = () => {
                 case "AttendanceHistory":
                   iconName = "save-outline";
                   break;
-                case "QTT":
-                  iconName = "document-text-outline";
-                  break;
-                case "Competitors":
-                  iconName = "documents-outline";
-                  break;
-                case "Expiry":
-                  iconName = "today-outline";
-                  break;
                 case "Profile":
                   iconName = "person-outline";
                   break;
@@ -76,13 +64,6 @@ const Screens = () => {
             headerShown: false,
           })}
         >
-          {role === "RC" && (
-            <>
-              <Tab.Screen name="QTT" component={QTTScreen} />
-              <Tab.Screen name="Competitors" component={CompetitorsScreen} />
-              <Tab.Screen name="Expiry" component={ExpiryScreen} />
-            </>
-          )}
           <Tab.Screen name="Attendance" component={AttendanceScreen} />
           {/* <Tab.Screen name="AttendanceHistory" component={AttendanceHistory} /> */}
           <Tab.Screen name="Profile" component={ProfileScreen} />
