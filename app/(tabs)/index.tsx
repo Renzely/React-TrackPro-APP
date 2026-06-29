@@ -71,38 +71,26 @@ const LoginScreen = () => {
       const data = await response.json();
 
       if (!response.ok) {
+        // Handles 400 (bad credentials) and 403 (inactive/unverified)
+        // — backend message is already user-friendly for both cases
         Alert.alert("Login Failed", data.message || "Invalid credentials");
-        setLoading(false);
         return;
       }
 
-      const user = data.user;
+      const { token, user } = data;
 
-      // ── Block inactive accounts ──
-      if (user?.isVerified === false || user?.isVerified === 0) {
-        Alert.alert(
-          "Account Inactive",
-          "Your account is currently inactive.\n\nPlease contact your Account Supervisor to activate your account.",
-          [{ text: "OK", style: "default" }],
-        );
-        setLoading(false);
-        return;
-      }
-
-      await AsyncStorage.setItem("userEmail", user?.email || email);
-      await AsyncStorage.setItem("token", data.token);
+      await AsyncStorage.setItem("userEmail", user.email);
+      await AsyncStorage.setItem("token", token);
       await AsyncStorage.setItem("user", JSON.stringify(user));
-      await signIn(data.token);
-      Alert.alert("Success", "Login successful!");
+      await signIn(token);
       router.replace("/(tabs)/Navigator");
     } catch (error) {
-      Alert.alert("Error", "Something went wrong during login.");
+      Alert.alert("Error", "Something went wrong. Please try again.");
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
-
   return (
     <View style={{ flex: 1, backgroundColor: "#f0f8ff" }}>
       <StatusBar barStyle="dark-content" backgroundColor="#f0f8ff" />

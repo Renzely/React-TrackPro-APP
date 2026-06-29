@@ -2,7 +2,7 @@
   "expo": {
     "name": "TrackPro",
     "slug": "trackpro",
-    "version": "1.0.4",
+    "version": "1.0.9",
     "orientation": "portrait",
     "icon": "./assets/images/TrackPro-logo-notxt1.png",
     "scheme": "towi",
@@ -18,7 +18,7 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.bmp.trackpro",
-      "versionCode": 14
+      "versionCode": 20
     },
     "web": {
       "bundler": "metro",
