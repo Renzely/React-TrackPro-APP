@@ -24,6 +24,7 @@ type TimeLog = {
   outlet: string;
   timeIn: string;
   timeOut?: string | null;
+  shiftType?: "day" | "graveyard";
   addressTimeIn?: string | null;
   addressTimeOut?: string | null;
   timeInSelfieUri?: string | null;
@@ -47,6 +48,9 @@ const EMPTY_ATTENDANCE = {
   addressTimeOut: null,
   timeInSelfieUri: null,
   timeOutSelfieUri: null,
+  shiftCount: 0, // ✅ new
+  canAddShift: true, // ✅ new
+  activeShiftType: null as "day" | "graveyard" | null,
 };
 
 const AttendanceScreen = () => {
@@ -55,7 +59,7 @@ const AttendanceScreen = () => {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const emailRef = useRef<string>("");
   const selectedOutletRef = useRef<string>("");
-
+  const [shiftTypeModalVisible, setShiftTypeModalVisible] = useState(false);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
   const [attendanceHistory, setAttendanceHistory] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -83,11 +87,17 @@ const AttendanceScreen = () => {
     addressTimeOut: string | null;
     timeInSelfieUri: string | null;
     timeOutSelfieUri: string | null;
+    shiftCount: number; // ✅ new
+    canAddShift: boolean; // ✅ new
+    activeShiftType: "day" | "graveyard" | null;
   }>(EMPTY_ATTENDANCE);
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
   } | null>(null);
+
+  const getManilaDate = () =>
+    new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
 
   // ── Fetch attendance status by outlet — always uses refs, never stale ────
   const fetchAttendanceStatus = async (
@@ -98,7 +108,7 @@ const AttendanceScreen = () => {
     if (!outlet || !currentEmail) return;
     setLoading(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = getManilaDate();
       const res = await fetch(
         `${BASE_URL}/attendance/status?email=${encodeURIComponent(currentEmail)}&outlet=${encodeURIComponent(outlet)}&date=${today}`,
       );
@@ -113,6 +123,9 @@ const AttendanceScreen = () => {
           addressTimeOut: data.addressTimeOut || null,
           timeInSelfieUri: data.timeInSelfieUri || null,
           timeOutSelfieUri: data.timeOutSelfieUri || null,
+          shiftCount: data.shiftCount ?? 0, // ✅ new
+          canAddShift: data.canAddShift ?? true, // ✅ new
+          activeShiftType: data.activeShiftType ?? null,
         });
       } else {
         setAttendanceData(EMPTY_ATTENDANCE);
@@ -290,7 +303,11 @@ const AttendanceScreen = () => {
     return null;
   };
 
-  const handleTimeIn = async () => {
+  const onTimeInPress = () => {
+    setShiftTypeModalVisible(true); // always ask, including the first shift
+  };
+
+  const handleTimeIn = async (shiftType: "day" | "graveyard" = "day") => {
     setIsLoadingTimeIn(true);
     try {
       const permissionResult =
@@ -331,7 +348,7 @@ const AttendanceScreen = () => {
         throw new Error(`Upload failed: ${await uploadRes.text()}`);
       const selfieUrl = url.split("?")[0];
       const now = new Date();
-      const date = now.toISOString().split("T")[0];
+      const date = getManilaDate();
       const timeIn = now.toLocaleTimeString("en-PH", {
         hour: "numeric",
         minute: "numeric",
@@ -351,12 +368,29 @@ const AttendanceScreen = () => {
           selfieUrl,
           location,
           timeInLocation: resolvedAddress,
+          shiftType,
         }),
       });
-      if (!saveRes.ok) throw new Error("Failed to save time-in data");
-      // ✅ Use refs directly — no stale state issue
+
+      // ✅ Add these debug logs temporarily
+      console.log("Time-in status:", saveRes.status);
+      const responseText = await saveRes.clone().text();
+      console.log("Time-in response:", responseText);
+
+      if (!saveRes.ok) {
+        const errData = JSON.parse(responseText);
+        Alert.alert(
+          "Cannot Time In",
+          errData.error || "Failed to save time-in data",
+        );
+        return;
+      }
+
       await fetchAttendanceStatus(currentOutlet, currentEmail);
-      Alert.alert("Success", "Time In recorded!");
+      Alert.alert(
+        "Success",
+        `Shift ${attendanceData.shiftCount + 1} Time In recorded!`,
+      );
     } catch (error: unknown) {
       Alert.alert(
         "Error",
@@ -408,7 +442,7 @@ const AttendanceScreen = () => {
         throw new Error(`Upload failed: ${await uploadRes.text()}`);
       const timeOutSelfieUrl = url.split("?")[0];
       const now = new Date();
-      const date = now.toISOString().split("T")[0];
+      const date = getManilaDate();
       const timeOut = now.toLocaleTimeString("en-PH", {
         hour: "numeric",
         minute: "numeric",
@@ -430,10 +464,26 @@ const AttendanceScreen = () => {
           timeOutLocation: resolvedAddress,
         }),
       });
-      if (!saveRes.ok) throw new Error("Failed to save time-out data");
-      // ✅ Use refs directly — no stale state issue
+
+      // ✅ Handle backend errors
+      if (!saveRes.ok) {
+        const errData = await saveRes.json();
+        Alert.alert(
+          "Cannot Time Out",
+          errData.error || "Failed to save time-out data",
+        );
+        return;
+      }
+
       await fetchAttendanceStatus(currentOutlet, currentEmail);
-      Alert.alert("Success", "Time Out recorded!");
+      Alert.alert(
+        "Success",
+        `Shift ${attendanceData.shiftCount} Time Out recorded!${
+          attendanceData.shiftCount < 3
+            ? "\nYou can start another shift."
+            : "\nMaximum shifts reached for today."
+        }`,
+      );
     } catch (error: unknown) {
       Alert.alert(
         "Error",
@@ -749,6 +799,58 @@ const AttendanceScreen = () => {
           </>
         )}
 
+        {/* Shift indicator */}
+        {attendanceData.shiftCount > 0 && (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              backgroundColor: "#e8f7fd",
+              borderRadius: 10,
+              padding: 10,
+              marginBottom: 12,
+            }}
+          >
+            <Ionicons name="repeat-outline" size={16} color="#0aafeb" />
+            <Text style={{ fontSize: 13, color: "#0aafeb", fontWeight: "600" }}>
+              Shift {attendanceData.shiftCount} of 3
+            </Text>
+            {attendanceData.canAddShift && (
+              <Text style={{ fontSize: 12, color: "#888", marginLeft: 4 }}>
+                · Can add another shift
+              </Text>
+            )}
+            {!attendanceData.canAddShift && attendanceData.shiftCount >= 3 && (
+              <Text style={{ fontSize: 12, color: "#c9184a", marginLeft: 4 }}>
+                · Maximum shifts reached
+              </Text>
+            )}
+          </View>
+        )}
+
+        {attendanceData.activeShiftType === "graveyard" &&
+          attendanceData.hasTimedIn &&
+          !attendanceData.hasTimedOut && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: "#1a1a2e",
+                borderRadius: 10,
+                padding: 10,
+                marginBottom: 12,
+              }}
+            >
+              <Ionicons name="moon-outline" size={16} color="#fff" />
+              <Text style={{ fontSize: 12, color: "#fff", fontWeight: "600" }}>
+                Graveyard shift active — won't reset at midnight{"\n"}
+                until you Time Out
+              </Text>
+            </View>
+          )}
+
         {/* Action buttons */}
         <View
           style={{
@@ -759,13 +861,19 @@ const AttendanceScreen = () => {
           }}
         >
           <TouchableOpacity
-            onPress={handleTimeIn}
-            disabled={attendanceData.hasTimedIn || isLoadingTimeIn}
+            onPress={onTimeInPress}
+            disabled={
+              (attendanceData.hasTimedIn && !attendanceData.hasTimedOut) ||
+              (attendanceData.shiftCount >= 3 && !attendanceData.canAddShift) ||
+              isLoadingTimeIn
+            }
             style={{
               flex: 1,
-              backgroundColor: attendanceData.hasTimedIn
-                ? "#e0e0e0"
-                : "#0aafeb",
+              backgroundColor:
+                (attendanceData.hasTimedIn && !attendanceData.hasTimedOut) ||
+                (attendanceData.shiftCount >= 3 && !attendanceData.canAddShift)
+                  ? "#e0e0e0"
+                  : "#0aafeb",
               borderRadius: 14,
               paddingVertical: 16,
               alignItems: "center",
@@ -782,7 +890,12 @@ const AttendanceScreen = () => {
                 <Text
                   style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}
                 >
-                  Time In
+                  Time In{" "}
+                  {attendanceData.canAddShift
+                    ? `(Shift ${attendanceData.shiftCount + 1})`
+                    : attendanceData.shiftCount === 0
+                      ? ""
+                      : ""}
                 </Text>
               </>
             )}
@@ -846,6 +959,79 @@ const AttendanceScreen = () => {
           </Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={shiftTypeModalVisible} transparent animationType="fade">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <View
+            style={{ backgroundColor: "#fff", borderRadius: 16, padding: 20 }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "700",
+                color: "#1a1a2e",
+                marginBottom: 4,
+              }}
+            >
+              Select Shift Type
+            </Text>
+            <Text style={{ fontSize: 13, color: "#888", marginBottom: 16 }}>
+              Choose your shift type. Graveyard shifts stay active past midnight
+              until you Time Out.
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => {
+                setShiftTypeModalVisible(false);
+                handleTimeIn("day");
+              }}
+              style={{
+                backgroundColor: "#0aafeb",
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "600" }}>
+                Day Shift
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setShiftTypeModalVisible(false);
+                handleTimeIn("graveyard");
+              }}
+              style={{
+                backgroundColor: "#1a1a2e",
+                borderRadius: 12,
+                paddingVertical: 14,
+                alignItems: "center",
+                marginBottom: 10,
+              }}
+            >
+              <Text style={{ color: "#fff", fontWeight: "600" }}>
+                Graveyard Shift
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => setShiftTypeModalVisible(false)}
+              style={{ paddingVertical: 10, alignItems: "center" }}
+            >
+              <Text style={{ color: "#888", fontWeight: "500" }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Selfie Modal */}
       {selectedSelfieUri && (

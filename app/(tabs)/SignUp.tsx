@@ -18,9 +18,22 @@ import {
 const ROLES = [
   { label: "MERCHANDISER", value: "MERCHANDISER" },
   { label: "COORDINATOR", value: "COORDINATOR" },
+  { label: "TACTICAL COMMANDO", value: "TACTICAL COMMANDO" },
+  { label: "MARABOU", value: "MARABOU" },
+  { label: "BMPOWER", value: "BMPOWER" },
 ];
 
 const OTP_LENGTH = 6;
+
+type FormErrors = {
+  role?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  contactNumber?: string;
+  password?: string;
+  confirmPassword?: string;
+};
 
 const SignUp = () => {
   const router = useRouter();
@@ -35,6 +48,7 @@ const SignUp = () => {
     password: "",
     confirmPassword: "",
   });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -45,6 +59,10 @@ const SignUp = () => {
 
   const handleChange = (field: string, value: string) => {
     setForm({ ...form, [field]: value });
+    // Clear error on change
+    if (errors[field as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
   };
 
   const passwordsMatch =
@@ -52,15 +70,40 @@ const SignUp = () => {
   const passwordMismatch =
     form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
 
+  const validate = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!form.role) newErrors.role = "Role is required.";
+    if (!form.firstName.trim()) newErrors.firstName = "First name is required.";
+    if (!form.lastName.trim()) newErrors.lastName = "Last name is required.";
+    if (!form.email.trim()) {
+      newErrors.email = "Email address is required.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      newErrors.email = "Please enter a valid email address.";
+    }
+    if (!form.contactNumber.trim()) {
+      newErrors.contactNumber = "Contact number is required.";
+    } else if (form.contactNumber.length < 11) {
+      newErrors.contactNumber = "Contact number must be 11 digits.";
+    }
+    if (!form.password) {
+      newErrors.password = "Password is required.";
+    } else if (form.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters.";
+    }
+    if (!form.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password.";
+    } else if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignUp = async () => {
-    if (!form.firstName || !form.lastName || !form.email || !form.password) {
-      Alert.alert("Missing Fields", "Please fill in all required fields.");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      Alert.alert("Password Mismatch", "Passwords do not match.");
-      return;
-    }
+    if (!validate()) return;
+
     setLoading(true);
     try {
       const res = await fetch("https://api-trackpro.bmphrc.com/signup", {
@@ -93,7 +136,11 @@ const SignUp = () => {
       const res = await fetch("https://api-trackpro.bmphrc.com/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, otp: otpString }),
+        body: JSON.stringify({
+          email: form.email,
+          otp: otpString,
+          purpose: "verify-email",
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -123,15 +170,24 @@ const SignUp = () => {
     }
   };
 
+  // Returns red border when field has an error, blue when focused, default otherwise
   const fieldStyle = (name: string) => ({
     flexDirection: "row" as const,
     alignItems: "center" as const,
-    backgroundColor: focusedField === name ? "#f0f8ff" : "#f7f7f7",
+    backgroundColor: errors[name as keyof FormErrors]
+      ? "#fff5f5"
+      : focusedField === name
+        ? "#f0f8ff"
+        : "#f7f7f7",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: focusedField === name ? "#0aafeb" : "#eee",
+    borderColor: errors[name as keyof FormErrors]
+      ? "#e24b4a"
+      : focusedField === name
+        ? "#0aafeb"
+        : "#eee",
     paddingHorizontal: 14,
-    marginBottom: 12,
+    marginBottom: 4,
   });
 
   const inputStyle = {
@@ -149,6 +205,25 @@ const SignUp = () => {
     fontWeight: "500" as const,
   };
 
+  // Inline error message component
+  const ErrorMsg = ({ field }: { field: keyof FormErrors }) =>
+    errors[field] ? (
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: 10,
+          marginTop: 2,
+          gap: 4,
+        }}
+      >
+        <Ionicons name="alert-circle-outline" size={13} color="#e24b4a" />
+        <Text style={{ fontSize: 11, color: "#e24b4a" }}>{errors[field]}</Text>
+      </View>
+    ) : (
+      <View style={{ marginBottom: 10 }} />
+    );
+
   const maskedEmail = form.email
     ? form.email.replace(
         /^(.)(.*)(@.*)$/,
@@ -160,7 +235,7 @@ const SignUp = () => {
     <View style={{ flex: 1, backgroundColor: "#f0f8ff" }}>
       <StatusBar barStyle="light-content" backgroundColor="#0aafeb" />
 
-      {/* Header — pinned, never moves with keyboard */}
+      {/* Header */}
       <View
         style={{
           backgroundColor: "#0aafeb",
@@ -223,7 +298,6 @@ const SignUp = () => {
         </View>
       </View>
 
-      {/* Only the form scrolls up when keyboard opens */}
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -237,23 +311,31 @@ const SignUp = () => {
           {!isOtpSent ? (
             <>
               {/* Role selector */}
-              <Text style={labelStyle}>Select Role</Text>
+              <Text style={labelStyle}>Select Role *</Text>
               <View
                 style={{
-                  backgroundColor: "#fff",
+                  backgroundColor: errors.role ? "#fff5f5" : "#fff",
                   borderRadius: 12,
                   borderWidth: 1,
-                  borderColor: "#eee",
-                  marginBottom: 16,
+                  borderColor: errors.role ? "#e24b4a" : "#eee",
+                  marginBottom: 4,
                   overflow: "hidden",
                 }}
               >
                 <Picker
                   selectedValue={form.role}
-                  onValueChange={(value) => handleChange("role", value)}
+                  onValueChange={(value) => {
+                    handleChange("role", value);
+                  }}
                   style={{ color: "#1a1a2e", fontSize: 14 }}
                   dropdownIconColor="#0aafeb"
                 >
+                  <Picker.Item
+                    label="Select Role"
+                    value=""
+                    enabled={false}
+                    color="#999"
+                  />
                   {ROLES.map((r) => (
                     <Picker.Item
                       key={r.value}
@@ -263,6 +345,7 @@ const SignUp = () => {
                   ))}
                 </Picker>
               </View>
+              <ErrorMsg field="role" />
 
               {/* Name section */}
               <View
@@ -293,7 +376,13 @@ const SignUp = () => {
                   <Ionicons
                     name="person-outline"
                     size={17}
-                    color={focusedField === "firstName" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.firstName
+                        ? "#e24b4a"
+                        : focusedField === "firstName"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -305,11 +394,12 @@ const SignUp = () => {
                     onBlur={() => setFocusedField(null)}
                   />
                 </View>
+                <ErrorMsg field="firstName" />
 
                 <Text style={labelStyle}>
                   Middle Name <Text style={{ color: "#bbb" }}>(optional)</Text>
                 </Text>
-                <View style={fieldStyle("middleName")}>
+                <View style={[fieldStyle("middleName"), { marginBottom: 12 }]}>
                   <Ionicons
                     name="person-outline"
                     size={17}
@@ -327,11 +417,17 @@ const SignUp = () => {
                 </View>
 
                 <Text style={labelStyle}>Last Name *</Text>
-                <View style={[fieldStyle("lastName"), { marginBottom: 0 }]}>
+                <View style={fieldStyle("lastName")}>
                   <Ionicons
                     name="person-outline"
                     size={17}
-                    color={focusedField === "lastName" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.lastName
+                        ? "#e24b4a"
+                        : focusedField === "lastName"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -343,6 +439,7 @@ const SignUp = () => {
                     onBlur={() => setFocusedField(null)}
                   />
                 </View>
+                <ErrorMsg field="lastName" />
               </View>
 
               {/* Contact section */}
@@ -374,7 +471,13 @@ const SignUp = () => {
                   <Ionicons
                     name="mail-outline"
                     size={17}
-                    color={focusedField === "email" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.email
+                        ? "#e24b4a"
+                        : focusedField === "email"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -388,13 +491,20 @@ const SignUp = () => {
                     onBlur={() => setFocusedField(null)}
                   />
                 </View>
+                <ErrorMsg field="email" />
 
                 <Text style={labelStyle}>Contact Number *</Text>
-                <View style={[fieldStyle("contact"), { marginBottom: 0 }]}>
+                <View style={fieldStyle("contactNumber")}>
                   <Ionicons
                     name="call-outline"
                     size={17}
-                    color={focusedField === "contact" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.contactNumber
+                        ? "#e24b4a"
+                        : focusedField === "contact"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -413,6 +523,7 @@ const SignUp = () => {
                     onBlur={() => setFocusedField(null)}
                   />
                 </View>
+                <ErrorMsg field="contactNumber" />
               </View>
 
               {/* Password section */}
@@ -444,7 +555,13 @@ const SignUp = () => {
                   <Ionicons
                     name="lock-closed-outline"
                     size={17}
-                    color={focusedField === "password" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.password
+                        ? "#e24b4a"
+                        : focusedField === "password"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -464,15 +581,16 @@ const SignUp = () => {
                     />
                   </TouchableOpacity>
                 </View>
+                <ErrorMsg field="password" />
 
                 <Text style={labelStyle}>Confirm Password *</Text>
                 <View
                   style={[
-                    fieldStyle("confirm"),
+                    fieldStyle("confirmPassword"),
                     {
-                      marginBottom: 0,
-                      borderColor:
-                        focusedField === "confirm"
+                      borderColor: errors.confirmPassword
+                        ? "#e24b4a"
+                        : focusedField === "confirm"
                           ? passwordMismatch
                             ? "#e24b4a"
                             : "#0aafeb"
@@ -483,7 +601,13 @@ const SignUp = () => {
                   <Ionicons
                     name="lock-closed-outline"
                     size={17}
-                    color={focusedField === "confirm" ? "#0aafeb" : "#bbb"}
+                    color={
+                      errors.confirmPassword
+                        ? "#e24b4a"
+                        : focusedField === "confirm"
+                          ? "#0aafeb"
+                          : "#bbb"
+                    }
                   />
                   <TextInput
                     style={inputStyle}
@@ -515,13 +639,7 @@ const SignUp = () => {
                     />
                   </TouchableOpacity>
                 </View>
-                {passwordMismatch && (
-                  <Text
-                    style={{ fontSize: 11, color: "#e24b4a", marginTop: 6 }}
-                  >
-                    Passwords do not match
-                  </Text>
-                )}
+                <ErrorMsg field="confirmPassword" />
               </View>
 
               {/* Submit */}
